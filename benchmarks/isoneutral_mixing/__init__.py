@@ -7,13 +7,13 @@ def generate_inputs(size):
     np.random.seed(17)
 
     shape = (
-        math.ceil(np.sqrt(2) * size ** (1/3)),
-        math.ceil(np.sqrt(2) * size ** (1/3)),
-        math.ceil(0.5 * size ** (1/3)),
+        math.ceil(2 * size ** (1/3)),
+        math.ceil(2 * size ** (1/3)),
+        math.ceil(0.25 * size ** (1/3)),
     )
 
-    # booleans
-    maskT, maskU, maskV, maskW = ((np.random.rand(*shape) < 0.8) for _ in range(4))
+    # masks
+    maskT, maskU, maskV, maskW = ((np.random.rand(*shape) < 0.8).astype('float64') for _ in range(4))
 
     # 1d arrays
     dxt, dxu = (np.random.rand(shape[0]) for _ in range(2))
@@ -28,7 +28,7 @@ def generate_inputs(size):
     salt, temp = (np.random.rand(*shape, 3) for _ in range(2))
 
     # 5d arrays
-    Ai_ez, Ai_nz, Ai_bx, Ai_by = (np.random.rand(*shape, 2, 2) for _ in range(4))
+    Ai_ez, Ai_nz, Ai_bx, Ai_by = (np.zeros((*shape, 2, 2)) for _ in range(4))
 
     return (
         maskT, maskU, maskV, maskW,
@@ -46,17 +46,18 @@ def try_import(backend):
         return None
 
 
-def run(backend, size):
+def get_callable(backend, size):
     backend_module = try_import(backend)
     inputs = generate_inputs(size)
-    return backend_module.run(*inputs)
+    return lambda: backend_module.run(*inputs)
 
 
 __implementations__ = (
     'bohrium',
     'numba',
     'numpy',
-    # 'pytorch',
+    'jax',
+    'pytorch',
     # 'tensorflow',
-    # 'theano',
+    'theano',
 )

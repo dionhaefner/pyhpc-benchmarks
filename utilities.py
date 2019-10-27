@@ -7,15 +7,15 @@ class Timer:
         self.elapsed = float('nan')
 
     def __enter__(self):
-        self._start = time.process_time()
+        self._start = time.perf_counter()
         return self
 
     def __exit__(self, type, value, traceback):
         if value is None:
-            self.elapsed = time.process_time() - self._start
+            self.elapsed = time.perf_counter() - self._start
 
 
-def estimate_repetitions(func, args, target_time=10, powers_of=10):
+def estimate_repetitions(func, args=(), target_time=10, powers_of=10):
     # call function once for warm-up
     func(*args)
 

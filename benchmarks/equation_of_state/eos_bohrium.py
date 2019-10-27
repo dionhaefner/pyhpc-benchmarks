@@ -180,5 +180,4 @@ def gsw_dHdT(sa, ct, p):
 def run(sa, ct, p):
     sa, ct, p = (bh.array(k) for k in (sa, ct, p))
     out = gsw_dHdT(sa, ct, p)
-    bh.flush()
-    return out
+    return out.copy2numpy()

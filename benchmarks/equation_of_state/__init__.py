@@ -7,9 +7,9 @@ def generate_inputs(size):
     np.random.seed(17)
 
     shape = (
-        math.ceil(np.sqrt(2) * size ** (1/3)),
-        math.ceil(np.sqrt(2) * size ** (1/3)),
-        math.ceil(0.5 * size ** (1/3)),
+        math.ceil(2 * size ** (1/3)),
+        math.ceil(2 * size ** (1/3)),
+        math.ceil(0.25 * size ** (1/3)),
     )
 
     s = np.random.uniform(1e-2, 10, size=shape)
@@ -25,14 +25,15 @@ def try_import(backend):
         return None
 
 
-def run(backend, size):
+def get_callable(backend, size):
     backend_module = try_import(backend)
     inputs = generate_inputs(size)
-    return backend_module.run(*inputs)
+    return lambda: backend_module.run(*inputs)
 
 
 __implementations__ = (
     'bohrium',
+    'jax',
     'numba',
     'numpy',
     'pytorch',

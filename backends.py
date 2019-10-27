@@ -71,6 +71,30 @@ def setup_numba():
 
 
 @setup_function
+def setup_jax():
+    oldenv = os.environ.get('XLA_FLAGS')
+    try:
+        os.environ.update(
+            XLA_FLAGS=(
+                "--xla_cpu_multi_thread_eigen=false "
+                "intra_op_parallelism_threads=1 "
+                "inter_op_parallelism_threads=1 "
+            )
+        )
+
+        try_import('jax')
+        from jax.config import config
+        # use 64 bit floats
+        config.update('jax_enable_x64', True)
+        yield
+    finally:
+        if oldenv is None:
+            del os.environ['XLA_FLAGS']
+        else:
+            os.environ['XLA_FLAGS'] = oldenv
+
+
+@setup_function
 def setup_pytorch():
     oldenv = os.environ.get('OMP_NUM_THREADS')
     try:
@@ -108,6 +132,7 @@ def setup_tensorflow():
 __backends__ = {
     'numpy': setup_numpy,
     'bohrium': setup_bohrium,
+    'jax': setup_jax,
     'theano': setup_theano,
     'numba': setup_numba,
     'pytorch': setup_pytorch,

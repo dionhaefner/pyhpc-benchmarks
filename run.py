@@ -4,11 +4,12 @@ import importlib
 import random
 import os
 import itertools
+import collections
 
 import click
 import numpy as np
 
-from backends import __backends__, BackendNotSupported
+from backends import __backends__ as setup_functions, BackendNotSupported
 from utilities import Timer, estimate_repetitions
 
 
@@ -51,41 +52,62 @@ def format_output(stats, benchmark_title):
     stats = np.sort(stats, axis=0, order=['size', 'mean', 'max', 'median'])
 
     header = stats.dtype.names
-    col_width = max(len(x) for x in header) + 2
+    col_widths = collections.defaultdict(lambda: 8)
+    col_widths.update(size=12, backend=10)
 
-    def format_col(s, is_time=False):
-        if np.issubdtype(type(s), np.integer):
-            typecode = 'd'
+    def format_col(col_name, value, is_time=False):
+        col_width = col_widths[col_name]
+
+        if np.issubdtype(type(value), np.integer):
+            typecode = ','
         else:
             typecode = '.3f'
         if is_time:
-            format_string = f'{{s:>{col_width}{typecode}}}'
+            format_string = f'{{value:>{col_width}{typecode}}}'
         else:
-            format_string = f'{{s:<{col_width}}}'
-        return format_string.format(s=s)
+            format_string = f'{{value:<{col_width}}}'
+
+        return format_string.format(value=value)
 
     out = [
         '',
         benchmark_title,
         '=' * len(benchmark_title),
         '',
-        '  '.join(format_col(s) for s in header)
+        '  '.join(format_col(s, s) for s in header)
     ]
 
     out.append('-' * len(out[-1]))
 
+    current_size = None
     for row in stats:
+        # print empty line on size change
+        size = row[0]
+        if current_size is not None and size != current_size:
+            out.append('')
+        current_size = size
+
         out.append(
-            '  '.join(format_col(s, not isinstance(s, str)) for s in row)
+            '  '.join(
+                format_col(n, s, not isinstance(s, str))
+                for n, s in zip(header, row)
+            )
         )
 
     out.extend([
         '',
-        '(timings in seconds)',
-        ''
+        '(time in wall seconds, less is better)',
     ])
 
     return '\n'.join(out)
+
+
+def get_benchmark_module(file_path):
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    module_path = os.path.relpath(file_path, base_path)
+    import_path = '.'.join(os.path.split(module_path))
+    bm_module = importlib.import_module(import_path)
+    return bm_module, import_path
 
 
 @click.command('run')
@@ -115,16 +137,15 @@ def format_output(stats, benchmark_title):
 )
 def main(benchmark, size=None, backend=None, repetitions=None):
     if len(size) == 0:
-        size = [2 ** i for i in range(10, 18)]
+        size = [2 ** i for i in range(12, 25, 2)]
 
     try:
-        file_path = benchmark
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        module_path = os.path.relpath(file_path, base_path)
-        import_path = '.'.join(os.path.split(module_path))
-        bm_module = importlib.import_module(import_path)
+        bm_module, bm_identifier = get_benchmark_module(benchmark)
     except ImportError as e:
-        click.echo(f'Error while loading benchmark {benchmark}: {e!s}', err=True)
+        click.echo(
+            f'Error while loading benchmark {benchmark}: {e!s}',
+            err=True
+        )
         raise click.Abort()
 
     available_backends = set(bm_module.__implementations__)
@@ -137,8 +158,22 @@ def main(benchmark, size=None, backend=None, repetitions=None):
     unsupported_backends = [b for b in backend if b not in available_backends]
 
     for b in unsupported_backends:
-        click.echo(f'Backend "{b}" is not supported by chosen benchmark', err=True)
+        click.echo(
+            f'Backend "{b}" is not supported by chosen benchmark (skipping)',
+            err=True
+        )
         backend.remove(b)
+
+    for b in backend.copy():
+        try:
+            with setup_functions[b]():
+                pass
+        except BackendNotSupported:
+            click.echo(
+                f'Setup for backend "{b}" failed (skipping)',
+                err=True
+            )
+            backend.remove(b)
 
     runs = sorted(itertools.product(backend, size))
 
@@ -147,22 +182,21 @@ def main(benchmark, size=None, backend=None, repetitions=None):
         return
 
     timings = {run: [] for run in runs}
-    run_benchmark = bm_module.run
-    setup_functions = __backends__
 
     if repetitions is None:
         click.echo('Estimating repetitions...')
         repetitions = {}
         for b, s in runs:
             with setup_functions[b]():
-                repetitions[(b, s)] = estimate_repetitions(run_benchmark, [b, s])
+                run = bm_module.get_callable(b, s)
+                repetitions[(b, s)] = estimate_repetitions(run)
     else:
         repetitions = {(b, s): repetitions for b, s in runs}
 
     all_runs = list(itertools.chain.from_iterable(
         [run] * (repetitions[run] + 1) for run in runs
     ))
-    all_runs = random.sample(all_runs, k=len(all_runs))
+    random.shuffle(all_runs)
 
     results = {}
 
@@ -170,14 +204,19 @@ def main(benchmark, size=None, backend=None, repetitions=None):
     try:
         with click.progressbar(all_runs) as pbar:
             for (b, size) in pbar:
-                with setup_functions[b](), Timer() as t:
-                    res = run_benchmark(b, size)
+                with setup_functions[b]():
+                    run = bm_module.get_callable(b, size)
+                    with Timer() as t:
+                        res = run()
 
-                if (b, size) in results:
-                    if not np.allclose(results[(b, size)], res):
-                        click.echo(f'Warning: inconsistent results for {fun.__name__}({size})', err=True)
+                if size in results:
+                    if not np.allclose(results[size], res):
+                        click.echo(
+                            f'Warning: inconsistent results for {b} @ {size}',
+                            err=True
+                        )
 
-                results[(b, size)] = res
+                results[size] = np.array(res)
                 timings[(b, size)].append(t.elapsed)
 
         for run in runs:
@@ -185,7 +224,7 @@ def main(benchmark, size=None, backend=None, repetitions=None):
 
     finally:
         stats = compute_statistics(timings)
-        click.echo(format_output(stats, import_path))
+        click.echo(format_output(stats, bm_identifier))
 
 
 if __name__ == '__main__':
