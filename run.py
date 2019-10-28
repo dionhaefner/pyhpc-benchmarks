@@ -29,7 +29,7 @@ def compute_statistics(timings, burnin=1):
             percentiles = [float('nan')] * 5
 
         stats.append(
-            (size, backend, repetitions, mean, stdev, *percentiles)
+            (size, backend, repetitions, mean, stdev, *percentiles, float('nan'))
         )
 
     stats = np.array(stats, dtype=[
@@ -43,7 +43,21 @@ def compute_statistics(timings, burnin=1):
         ('median', 'f4'),
         ('75%', 'f4'),
         ('max', 'f4'),
+        ('Δ', 'f4'),
     ])
+
+    # add deltas
+    sizes = np.unique(stats['size'])
+    for s in sizes:
+        mask = stats['size'] == s
+
+        # measure relative to NumPy if present, otherwise worst backend
+        if 'numpy' in stats['backend'][mask]:
+            reference_time = stats['mean'][mask & (stats['backend'] == 'numpy')]
+        else:
+            reference_time = np.nanmax(stats['mean'][mask])
+
+        stats['Δ'][mask] = reference_time / stats['mean'][mask]
 
     return stats
 
@@ -62,6 +76,7 @@ def format_output(stats, benchmark_title):
             typecode = ','
         else:
             typecode = '.3f'
+
         if is_time:
             format_string = f'{{value:>{col_width}{typecode}}}'
         else:
@@ -135,7 +150,7 @@ def get_benchmark_module(file_path):
     default=None,
     type=click.INT
 )
-def main(benchmark, size=None, backend=None, repetitions=None):
+def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
     if len(size) == 0:
         size = [2 ** i for i in range(12, 25, 2)]
 
@@ -194,16 +209,19 @@ def main(benchmark, size=None, backend=None, repetitions=None):
         repetitions = {(b, s): repetitions for b, s in runs}
 
     all_runs = list(itertools.chain.from_iterable(
-        [run] * (repetitions[run] + 1) for run in runs
+        [run] * (repetitions[run] + burnin) for run in runs
     ))
     random.shuffle(all_runs)
 
     results = {}
 
-    click.echo(f'Running {len(all_runs)} benchmarks...')
+    pbar = click.progressbar(
+        label=f'Running {len(all_runs)} benchmarks...', length=len(runs)
+    )
+
     try:
-        with click.progressbar(all_runs) as pbar:
-            for (b, size) in pbar:
+        with pbar:
+            for (b, size) in all_runs:
                 with setup_functions[b]():
                     run = bm_module.get_callable(b, size)
                     with Timer() as t:
@@ -218,9 +236,13 @@ def main(benchmark, size=None, backend=None, repetitions=None):
 
                 results[size] = np.array(res)
                 timings[(b, size)].append(t.elapsed)
+                pbar.update(1. / (repetitions[(b, size)] + burnin))
+
+            # push pbar to 100%
+            pbar.update(1.)
 
         for run in runs:
-            assert len(timings[run]) == repetitions[run] + 1
+            assert len(timings[run]) == repetitions[run] + burnin
 
     finally:
         stats = compute_statistics(timings)
