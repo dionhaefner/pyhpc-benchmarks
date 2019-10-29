@@ -21,7 +21,7 @@ def get_drhodT(salt, temp, p):
 def get_drhodS(salt, temp, p):
     betaS = 0.78e-3
     rho0 = 1024.
-    return betaS * rho0 * np.ones_like(temp)
+    return betaS * rho0
 
 
 @nb.jit(nopython=True)
@@ -47,6 +47,8 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     K_iso_steep = 50.
     tau = 0
 
+    drdT = np.empty_like(K_11)
+    drdS = np.empty_like(K_11)
     dTdx = np.empty_like(K_11)
     dSdx = np.empty_like(K_11)
     dTdy = np.empty_like(K_11)
@@ -57,12 +59,15 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     """
     drho_dt and drho_ds at centers of T cells
     """
-    drdT = maskT * get_drhodT(
-        salt[:, :, :, tau], temp[:, :, :, tau], np.abs(zt)
-    )
-    drdS = maskT * get_drhodS(
-        salt[:, :, :, tau], temp[:, :, :, tau], np.abs(zt)
-    )
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                drdT[i, j, k] = maskT[i, j, k] * get_drhodT(
+                    salt[i, j, k, tau], temp[i, j, k, tau], np.abs(zt[k])
+                )
+                drdS[i, j, k] = maskT[i, j, k] * get_drhodS(
+                    salt[i, j, k, tau], temp[i, j, k, tau], np.abs(zt[k])
+                )
 
     """
     gradients at top face of T cells
@@ -182,8 +187,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
                             + drdS[i, j, k + kr] * dSdx[i - 1 + ip, j, k + kr]
                         sxb = -drodxb / (min(0., drodzb) - epsln)
                         taper = dm_taper(sxb)
-                        sumx += dxu[i - 1 + ip] * K_iso[i, j, k] * taper * \
-                            sxb**2 * maskW[i, j, k]
+                        sumx += dxu[i - 1 + ip] * K_iso[i, j, k] * taper * sxb**2 * maskW[i, j, k]
                         Ai_bx[i, j, k, ip, kr] = taper * sxb * maskW[i, j, k]
 
                     # northward slopes at the top of T cells
@@ -198,7 +202,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
 
                 K_33[i, j, k] = sumx / (4 * dxt[i]) + sumy / (4 * dyt[j] * cost[j])
 
-    K_33[2:-2, 2:-2, -1] = 0.
+            K_33[i, j, -1] = 0.
 
 
 def run(*inputs):
