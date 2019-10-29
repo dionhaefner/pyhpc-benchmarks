@@ -125,6 +125,16 @@ def get_benchmark_module(file_path):
     return bm_module, import_path
 
 
+def check_consistency(res1, res2):
+    if isinstance(res1, (tuple, list)):
+        if not len(res1) == len(res2):
+            return False
+
+        return all(check_consistency(r1, r2) for r1, r2 in zip(res1, res2))
+
+    return np.allclose(res1, res2)
+
+
 @click.command('run')
 @click.argument(
     'BENCHMARK',
@@ -228,13 +238,14 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
                         res = run()
 
                 if size in results:
-                    if not np.allclose(results[size], res):
+                    if not check_consistency(results[size], res):
                         click.echo(
                             f'Warning: inconsistent results for {b} @ {size}',
                             err=True
                         )
+                else:
+                    results[size] = res
 
-                results[size] = np.array(res)
                 timings[(b, size)].append(t.elapsed)
                 pbar.update(1. / (repetitions[(b, size)] + burnin))
 

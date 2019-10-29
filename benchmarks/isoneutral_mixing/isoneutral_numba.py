@@ -47,12 +47,12 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     K_iso_steep = 50.
     tau = 0
 
-    dTdx = np.zeros_like(K_11)
-    dSdx = np.zeros_like(K_11)
-    dTdy = np.zeros_like(K_11)
-    dSdy = np.zeros_like(K_11)
-    dTdz = np.zeros_like(K_11)
-    dSdz = np.zeros_like(K_11)
+    dTdx = np.empty_like(K_11)
+    dSdx = np.empty_like(K_11)
+    dTdy = np.empty_like(K_11)
+    dSdy = np.empty_like(K_11)
+    dTdz = np.empty_like(K_11)
+    dSdz = np.empty_like(K_11)
 
     """
     drho_dt and drho_ds at centers of T cells
@@ -67,88 +67,101 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     """
     gradients at top face of T cells
     """
-    dTdz[:, :, :-1] = maskW[:, :, :-1] * \
-        (temp[:, :, 1:, tau] - temp[:, :, :-1, tau]) / \
-        dzw[:-1].reshape(1, 1, -1)
-    dSdz[:, :, :-1] = maskW[:, :, :-1] * \
-        (salt[:, :, 1:, tau] - salt[:, :, :-1, tau]) / \
-        dzw[:-1].reshape(1, 1, -1)
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz-1):
+                dTdz[i, j, k] = maskW[i, j, k] * \
+                    (temp[i, j, k+1, tau] - temp[i, j, k, tau]) / \
+                    dzw[k]
+                dSdz[i, j, k] = maskW[i, j, k] * \
+                    (salt[i, j, k+1, tau] - salt[i, j, k, tau]) / \
+                    dzw[k]
+            dTdz[i, j, -1] = 0.
+            dSdz[i, j, -1] = 0.
 
     """
     gradients at eastern face of T cells
     """
-    dTdx[:-1, :, :] = maskU[:-1, :, :] * (temp[1:, :, :, tau] - temp[:-1, :, :, tau]) \
-        / (dxu[:-1].reshape(-1, 1, 1) * cost.reshape(1, -1, 1))
-    dSdx[:-1, :, :] = maskU[:-1, :, :] * (salt[1:, :, :, tau] - salt[:-1, :, :, tau]) \
-        / (dxu[:-1].reshape(-1, 1, 1) * cost.reshape(1, -1, 1))
+    for i in range(nx-1):
+        for j in range(ny):
+            for k in range(nz):
+                dTdx[i, j, k] = maskU[i, j, k] * (temp[i+1, j, k, tau] - temp[i, j, k, tau]) \
+                    / (dxu[i] * cost[j])
+                dSdx[i, j, k] = maskU[i, j, k] * (salt[i+1, j, k, tau] - salt[i, j, k, tau]) \
+                    / (dxu[i] * cost[j])
+    dTdx[-1, :, :] = 0.
+    dSdx[-1, :, :] = 0.
 
     """
     gradients at northern face of T cells
     """
-    dTdy[:, :-1, :] = maskV[:, :-1, :] * \
-        (temp[:, 1:, :, tau] - temp[:, :-1, :, tau]) \
-        / dyu[:-1].reshape(1, -1, 1)
-    dSdy[:, :-1, :] = maskV[:, :-1, :] * \
-        (salt[:, 1:, :, tau] - salt[:, :-1, :, tau]) \
-        / dyu[:-1].reshape(1, -1, 1)
+    for i in range(nx):
+        for j in range(ny-1):
+            for k in range(nz):
+                dTdy[i, j, k] = maskV[i, j, k] * (temp[i, j+1, k, tau] - temp[i, j, k, tau]) \
+                    / dyu[j]
+                dSdy[i, j, k] = maskV[i, j, k] * (salt[i, j+1, k, tau] - salt[i, j, k, tau]) \
+                    / dyu[j]
+    dTdy[:, -1, :] = 0.
+    dSdy[:, -1, :] = 0.
 
     """
     Compute Ai_ez and K11 on center of east face of T cell.
     """
-    diffloc = np.zeros_like(K_11)
-    diffloc[1:-2, 2:-2, 1:] = 0.25 * (K_iso[1:-2, 2:-2, 1:] + K_iso[1:-2, 2:-2, :-1]
-                                      + K_iso[2:-1, 2:-2, 1:] + K_iso[2:-1, 2:-2, :-1])
-    diffloc[1:-2, 2:-2, 0] = 0.5 * (K_iso[1:-2, 2:-2, 0] + K_iso[2:-1, 2:-2, 0])
-
-    sumz = np.zeros_like(K_11)
-
     for i in range(1, nx-2):
-        for j in range(1, ny-2):
-            for ki in range(2):
-                for k in range(0, nz - ki):
-                    for ip in range(2):
-                        drodxe = drdT[i + ip, j, k + ki] * dTdx[i, j, k + ki] \
-                            + drdS[i + ip, j, k + ki] * dSdx[i, j, k + ki]
-                        drodze = drdT[i + ip, j, k + ki] * dTdz[i + ip, j, k] \
-                            + drdS[i + ip, j, k + ki] * \
-                            dSdz[i + ip, j, k]
-                        sxe = -drodxe / (min(0., drodze) - epsln)
-                        taper_2 = dm_taper(sxe)
-                        sumz[i, j, k + ki] += dzw[k] * maskU[i, j, k + ki] \
-                            * np.maximum(K_iso_steep, diffloc[i, j, k + ki] * taper_2)
-                        Ai_ez[i, j, k + ki, ip, 1 - ki] = taper_2 * \
-                            sxe * maskU[i, j, k + ki]
+        for j in range(2, ny-2):
+            for k in range(0, nz):
+                if k == 0:
+                    diffloc = 0.5 * (K_iso[i, j, k] + K_iso[i+1, j, k])
+                else:
+                    diffloc = 0.25 * (K_iso[i, j, k] + K_iso[i, j, k-1] + K_iso[i+1, j, k] + K_iso[i+1, j, k-1])
 
-    K_11[1:-2, 2:-2, :] = sumz[1:-2, 2:-2] / (4. * dzt.reshape(1, 1, -1))
+                sumz = 0.
+
+                for kr in (0, 1):
+                    if k == 0 and kr == 0:
+                        continue
+
+                    for ip in (0, 1):
+                        drodxe = drdT[i + ip, j, k] * dTdx[i, j, k] \
+                            + drdS[i + ip, j, k] * dSdx[i, j, k]
+                        drodze = drdT[i + ip, j, k] * dTdz[i + ip, j, k + kr - 1] \
+                            + drdS[i + ip, j, k] * dSdz[i + ip, j, k + kr - 1]
+                        sxe = -drodxe / (min(0., drodze) - epsln)
+                        taper = dm_taper(sxe)
+                        sumz += dzw[k + kr - 1] * maskU[i, j, k] * max(K_iso_steep, diffloc * taper)
+                        Ai_ez[i, j, k, ip, kr] = taper * sxe * maskU[i, j, k]
+
+                K_11[i, j, k] = sumz / (4. * dzt[k])
 
     """
     Compute Ai_nz and K_22 on center of north face of T cell.
     """
-    diffloc[...] = 0
-    diffloc[2:-2, 1:-2, 1:] = 0.25 * (K_iso[2:-2, 1:-2, 1:] + K_iso[2:-2, 1:-2, :-1]
-                                      + K_iso[2:-2, 2:-1, 1:] + K_iso[2:-2, 2:-1, :-1])
-    diffloc[2:-2, 1:-2, 0] = 0.5 * (K_iso[2:-2, 1:-2, 0] + K_iso[2:-2, 2:-1, 0])
-
-    sumz = np.zeros_like(K_11)
-
     for i in range(2, nx-2):
         for j in range(1, ny-2):
-            for ki in range(2):
-                for k in range(0, nz - ki):
-                    for jp in range(2):
-                        drodyn = drdT[i, j + jp, k + ki] * dTdy[i, j, k + ki] + \
-                            drdS[i, j + jp, k + ki] * dSdy[i, j, k + ki]
-                        drodzn = drdT[i, j + jp, k + ki] * dTdz[i, j + jp, k] \
-                            + drdS[i, j + jp, k + ki] * \
-                            dSdz[i, j + jp, k]
-                        syn = -drodyn / (min(0., drodzn) - epsln)
-                        taper_2 = dm_taper(syn)
-                        sumz[i, j, k + ki] += dzw[k] \
-                            * maskV[i, j, k + ki] * np.maximum(K_iso_steep, diffloc[i, j, k + ki] * taper_2)
-                        Ai_nz[i, j, k + ki, jp, 1 - ki] = taper_2 * \
-                            syn * maskV[i, j, k + ki]
+            for k in range(0, nz):
+                if k == 0:
+                    diffloc = 0.5 * (K_iso[i, j, k] + K_iso[i, j+1, k])
+                else:
+                    diffloc = 0.25 * (K_iso[i, j, k] + K_iso[i, j, k-1] + K_iso[i, j+1, k] + K_iso[i, j+1, k-1])
 
-    K_22[2:-2, 1:-2, :] = sumz[2:-2, 1:-2] / (4. * dzt.reshape(1, 1, -1))
+                sumz = 0.
+
+                for kr in (0, 1):
+                    if k == 0 and kr == 0:
+                        continue
+
+                    for jp in (0, 1):
+                        drodyn = drdT[i, j + jp, k] * dTdy[i, j, k] \
+                            + drdS[i, j + jp, k] * dSdy[i, j, k]
+                        drodzn = drdT[i, j + jp, k] * dTdz[i, j + jp, k + kr - 1] \
+                            + drdS[i, j + jp, k] * dSdz[i, j + jp, k + kr - 1]
+                        syn = -drodyn / (min(0., drodzn) - epsln)
+                        taper = dm_taper(syn)
+                        sumz += dzw[k + kr - 1] * maskV[i, j, k] * max(K_iso_steep, diffloc * taper)
+                        Ai_nz[i, j, k, jp, kr] = taper * syn * maskV[i, j, k]
+
+                K_22[i, j, k] = sumz / (4. * dzt[k])
 
     """
     compute Ai_bx, Ai_by and K33 on top face of T cell.
@@ -156,12 +169,14 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     for i in range(2, nx-2):
         for j in range(2, ny-2):
             for k in range(nz-1):
+                sumx = 0.
+                sumy = 0.
+
                 for kr in (0, 1):
                     drodzb = drdT[i, j, k + kr] * dTdz[i, j, k] \
                         + drdS[i, j, k + kr] * dSdz[i, j, k]
 
                     # eastward slopes at the top of T cells
-                    sumx = 0.
                     for ip in (0, 1):
                         drodxb = drdT[i, j, k + kr] * dTdx[i - 1 + ip, j, k + kr] \
                             + drdS[i, j, k + kr] * dSdx[i - 1 + ip, j, k + kr]
@@ -172,7 +187,6 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
                         Ai_bx[i, j, k, ip, kr] = taper * sxb * maskW[i, j, k]
 
                     # northward slopes at the top of T cells
-                    sumy = 0.
                     for jp in (0, 1):
                         facty = cosu[j - 1 + jp] * dyu[j - 1 + jp]
                         drodyb = drdT[i, j, k + kr] * dTdy[i, j + jp - 1, k + kr] \
@@ -189,4 +203,4 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
 
 def run(*inputs):
     isoneutral_diffusion_pre(*inputs)
-    return inputs[-1]
+    return inputs[-7:]

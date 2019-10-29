@@ -204,4 +204,4 @@ def run(*inputs):
     with torch.no_grad():
         inputs = [torch.as_tensor(a, device='cpu') for a in inputs]
         outputs = isoneutral_diffusion_pre(*inputs)
-        return outputs[-1]
+        return outputs

@@ -245,4 +245,4 @@ def run(*inputs):
         inputs[i] = inputs[i].reshape(1, 1, -1)
 
     outputs = isoneutral_theano(*inputs)
-    return outputs[-1]
+    return outputs

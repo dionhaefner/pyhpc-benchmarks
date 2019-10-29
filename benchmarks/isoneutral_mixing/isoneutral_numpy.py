@@ -180,4 +180,4 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
 
 def run(*inputs):
     isoneutral_diffusion_pre(*inputs)
-    return inputs[-1]
+    return inputs[-7:]

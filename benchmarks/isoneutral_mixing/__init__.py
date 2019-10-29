@@ -16,16 +16,16 @@ def generate_inputs(size):
     maskT, maskU, maskV, maskW = ((np.random.rand(*shape) < 0.8).astype('float64') for _ in range(4))
 
     # 1d arrays
-    dxt, dxu = (np.random.rand(shape[0]) for _ in range(2))
-    dyt, dyu = (np.random.rand(shape[1]) for _ in range(2))
-    dzt, dzw, zt = (np.random.rand(shape[2]) for _ in range(3))
-    cost, cosu = (np.random.rand(shape[1]) for _ in range(2))
+    dxt, dxu = (np.random.randn(shape[0]) for _ in range(2))
+    dyt, dyu = (np.random.randn(shape[1]) for _ in range(2))
+    dzt, dzw, zt = (np.random.randn(shape[2]) for _ in range(3))
+    cost, cosu = (np.random.randn(shape[1]) for _ in range(2))
 
     # 3d arrays
-    K_iso, K_iso_steep, K_11, K_22, K_33 = (np.random.rand(*shape) for _ in range(5))
+    K_iso, K_iso_steep, K_11, K_22, K_33 = (np.random.randn(*shape) for _ in range(5))
 
     # 4d arrays
-    salt, temp = (np.random.rand(*shape, 3) for _ in range(2))
+    salt, temp = (np.random.randn(*shape, 3) for _ in range(2))
 
     # 5d arrays
     Ai_ez, Ai_nz, Ai_bx, Ai_by = (np.zeros((*shape, 2, 2)) for _ in range(4))

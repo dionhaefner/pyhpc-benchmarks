@@ -241,4 +241,4 @@ def run(*inputs):
     outputs = isoneutral_diffusion_pre(*inputs)
     for o in outputs:
         o.block_until_ready()
-    return outputs[-1]
+    return outputs

@@ -181,4 +181,4 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
 def run(*inputs):
     inputs = [bh.array(k) for k in inputs]
     isoneutral_diffusion_pre(*inputs)
-    return inputs[-1].copy2numpy()
+    return [i.copy2numpy() for i in inputs[-7:]]
