@@ -145,6 +145,7 @@ def setup_tensorflow(gpu=False):
 __backends__ = {
     'numpy': setup_numpy,
     'bohrium': setup_bohrium,
+    'cupy': setup_cupy,
     'jax': setup_jax,
     'theano': setup_theano,
     'numba': setup_numba,
