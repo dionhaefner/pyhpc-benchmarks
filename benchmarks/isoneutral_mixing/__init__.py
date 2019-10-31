@@ -55,10 +55,10 @@ def get_callable(backend, size, gpu=False):
 
 __implementations__ = (
     'bohrium',
+    'cupy',
     'numba',
     'numpy',
     'jax',
     'pytorch',
-    # 'tensorflow',
     'theano',
 )
