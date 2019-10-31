@@ -86,17 +86,22 @@ def setup_numba(gpu=False):
 def setup_jax(gpu=False):
     os.environ.update(
         XLA_FLAGS=(
-            "--xla_cpu_multi_thread_eigen=false "
-            "intra_op_parallelism_threads=1 "
-            "inter_op_parallelism_threads=1 "
+            '--xla_cpu_multi_thread_eigen=false '
+            'intra_op_parallelism_threads=1 '
+            'inter_op_parallelism_threads=1 '
         ),
-        XLA_PYTHON_CLIENT_PREALLOCATE="false",
+        XLA_PYTHON_CLIENT_PREALLOCATE='false',
+        JAX_PLATFORM_NAME='gpu' if gpu else 'cpu'
     )
 
     import jax
     from jax.config import config
     # use 64 bit floats
     config.update('jax_enable_x64', True)
+
+    if gpu:
+        assert len(jax.devices()) > 0
+
     yield
 
 
