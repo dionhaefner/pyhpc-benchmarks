@@ -34,6 +34,7 @@ def get_callable(backend, size, gpu=False):
 
 __implementations__ = (
     'bohrium',
+    'cupy',
     'jax',
     'numba',
     'numpy',

@@ -83,6 +83,14 @@ def setup_numba(gpu=False):
 
 
 @setup_function
+def setup_cupy(gpu=False):
+    if not gpu:
+        raise RuntimeError('cupy requires GPU mode')
+    import cupy
+    yield
+
+
+@setup_function
 def setup_jax(gpu=False):
     os.environ.update(
         XLA_FLAGS=(
