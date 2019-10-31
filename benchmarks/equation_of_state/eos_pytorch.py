@@ -178,8 +178,9 @@ def gsw_dHdT(sa, ct, p):
 
 
 def run(sa, ct, p, gpu=False):
-    inputs = (torch.as_tensor(a, device='cpu') for a in (sa, ct, p))
-    out = gsw_dHdT(*inputs)
-    if gpu:
-        out = out.cpu()
-    return out
+    with torch.no_grad():
+        inputs = (torch.as_tensor(a, device='cpu') for a in (sa, ct, p))
+        out = gsw_dHdT(*inputs)
+        if gpu:
+            out = out.cpu()
+        return out

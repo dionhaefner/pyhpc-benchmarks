@@ -69,7 +69,6 @@ def setup_theano(gpu=False):
         OMP_NUM_THREADS='1',
     )
     if gpu:
-        raise
         os.environ.update(
             THEANO_FLAGS='device=cuda',
         )
