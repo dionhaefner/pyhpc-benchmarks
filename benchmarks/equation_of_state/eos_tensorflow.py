@@ -180,6 +180,6 @@ def gsw_dHdT(sa, ct, p):
 gsw_dHdT_tf = tf.function(gsw_dHdT)
 
 
-def run(sa, ct, p):
+def run(sa, ct, p, gpu=False):
     inputs = (tf.convert_to_tensor(a) for a in (sa, ct, p))
     return gsw_dHdT_tf(*inputs)

@@ -188,7 +188,7 @@ def gsw_dHdT_vec(sa, ct, p, out):
                 out[i, j, k] = gsw_dHdT(sa[i, j, k], ct[i, j, k], p[0, 0, k])
 
 
-def run(sa, ct, p):
+def run(sa, ct, p, gpu=False):
     out = np.empty_like(sa)
     gsw_dHdT_vec(sa, ct, p, out)
     return out

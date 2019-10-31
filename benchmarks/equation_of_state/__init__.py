@@ -1,5 +1,6 @@
 import math
 import importlib
+import functools
 
 
 def generate_inputs(size):
@@ -25,10 +26,10 @@ def try_import(backend):
         return None
 
 
-def get_callable(backend, size):
+def get_callable(backend, size, gpu=False):
     backend_module = try_import(backend)
     inputs = generate_inputs(size)
-    return lambda: backend_module.run(*inputs)
+    return functools.partial(backend_module.run, *inputs, gpu=gpu)
 
 
 __implementations__ = (

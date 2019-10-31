@@ -179,5 +179,5 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-def run(sa, ct, p):
+def run(sa, ct, p, gpu=False):
     return gsw_dHdT(sa, ct, p).block_until_ready()

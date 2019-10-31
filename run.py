@@ -62,7 +62,7 @@ def compute_statistics(timings, burnin=1):
     return stats
 
 
-def format_output(stats, benchmark_title):
+def format_output(stats, benchmark_title, gpu=False):
     stats = np.sort(stats, axis=0, order=['size', 'mean', 'max', 'median'])
 
     header = stats.dtype.names
@@ -88,6 +88,7 @@ def format_output(stats, benchmark_title):
         '',
         benchmark_title,
         '=' * len(benchmark_title),
+        f'Running on {"GPU" if gpu else "CPU"}',
         '',
         '  '.join(format_col(s, s) for s in header)
     ]
@@ -160,7 +161,19 @@ def check_consistency(res1, res2):
     default=None,
     type=click.INT
 )
-def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
+@click.option(
+    '--burnin',
+    required=False,
+    default=1,
+    type=click.INT
+)
+@click.option(
+    '--gpu',
+    required=False,
+    default=False,
+    is_flag=True
+)
+def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=False):
     if len(size) == 0:
         size = [2 ** i for i in range(12, 25, 2)]
 
@@ -191,7 +204,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
 
     for b in backend.copy():
         try:
-            with setup_functions[b]():
+            with setup_functions[b](gpu=gpu):
                 pass
         except BackendNotSupported:
             click.echo(
@@ -212,8 +225,8 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
         click.echo('Estimating repetitions...')
         repetitions = {}
         for b, s in runs:
-            with setup_functions[b]():
-                run = bm_module.get_callable(b, s)
+            with setup_functions[b](gpu=gpu):
+                run = bm_module.get_callable(b, s, gpu=gpu)
                 repetitions[(b, s)] = estimate_repetitions(run)
     else:
         repetitions = {(b, s): repetitions for b, s in runs}
@@ -224,6 +237,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
     random.shuffle(all_runs)
 
     results = {}
+    warned = {s: False for s in size}
 
     pbar = click.progressbar(
         label=f'Running {len(all_runs)} benchmarks...', length=len(runs)
@@ -232,15 +246,15 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
     try:
         with pbar:
             for (b, size) in all_runs:
-                with setup_functions[b]():
-                    run = bm_module.get_callable(b, size)
+                with setup_functions[b](gpu=gpu):
+                    run = bm_module.get_callable(b, size, gpu=gpu)
                     with Timer() as t:
                         res = run()
 
                 if size in results:
-                    if not check_consistency(results[size], res):
+                    if not check_consistency(results[size], res) and not warned[size]:
                         click.echo(
-                            f'Warning: inconsistent results for {b} @ {size}',
+                            f'Warning: inconsistent results for size {size}',
                             err=True
                         )
                 else:
@@ -257,7 +271,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1):
 
     finally:
         stats = compute_statistics(timings)
-        click.echo(format_output(stats, bm_identifier))
+        click.echo(format_output(stats, bm_identifier, gpu=gpu))
 
 
 if __name__ == '__main__':

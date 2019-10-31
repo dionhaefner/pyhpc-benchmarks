@@ -173,13 +173,11 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
             )
             Ai_nz = jax.ops.index_update(
                 Ai_nz, jax.ops.index[2:-2, 1:-2, ki:, jp, kr],
-                taper * \
-                syn * maskV[2:-2, 1:-2, ki:]
+                taper * syn * maskV[2:-2, 1:-2, ki:]
             )
     K_22 = jax.ops.index_update(
         K_22, jax.ops.index[2:-2, 1:-2, :],
-        sumz /
-        (4. * dzt[np.newaxis, np.newaxis, :])
+        sumz / (4. * dzt[np.newaxis, np.newaxis, :])
     )
 
     """
@@ -195,8 +193,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
         # eastward slopes at the top of T cells
         for ip in range(2):
             drodxb = drdT[2:-2, 2:-2, kr:-1 + kr or None] * dTdx[1 + ip:-3 + ip, 2:-2, kr:-1 + kr or None] \
-                + drdS[2:-2, 2:-2, kr:-1 + kr or None] * \
-                dSdx[1 + ip:-3 + ip, 2:-2, kr:-1 + kr or None]
+                + drdS[2:-2, 2:-2, kr:-1 + kr or None] * dSdx[1 + ip:-3 + ip, 2:-2, kr:-1 + kr or None]
             sxb = -drodxb / (np.minimum(0., drodzb) - epsln)
             taper = dm_taper(sxb)
             sumx += dxu[1 + ip:-3 + ip, np.newaxis, np.newaxis] * \
@@ -212,16 +209,14 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
         for jp in range(2):
             facty = cosu[1 + jp:-3 + jp] * dyu[1 + jp:-3 + jp]
             drodyb = drdT[2:-2, 2:-2, kr:-1 + kr or None] * dTdy[2:-2, 1 + jp:-3 + jp, kr:-1 + kr or None] \
-                + drdS[2:-2, 2:-2, kr:-1 + kr or None] * \
-                dSdy[2:-2, 1 + jp:-3 + jp, kr:-1 + kr or None]
+                + drdS[2:-2, 2:-2, kr:-1 + kr or None] * dSdy[2:-2, 1 + jp:-3 + jp, kr:-1 + kr or None]
             syb = -drodyb / (np.minimum(0., drodzb) - epsln)
             taper = dm_taper(syb)
             sumy += facty[np.newaxis, :, np.newaxis] * K_iso[2:-2, 2:-2, :-1] \
                 * taper * syb**2 * maskW[2:-2, 2:-2, :-1]
             Ai_by = jax.ops.index_update(
                 Ai_by, jax.ops.index[2:-2, 2:-2, :-1, jp, kr],
-                taper *
-                syb * maskW[2:-2, 2:-2, :-1]
+                taper * syb * maskW[2:-2, 2:-2, :-1]
             )
 
     K_33 = jax.ops.index_update(
@@ -237,7 +232,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
-def run(*inputs):
+def run(*inputs, gpu=False):
     outputs = isoneutral_diffusion_pre(*inputs)
     for o in outputs:
         o.block_until_ready()

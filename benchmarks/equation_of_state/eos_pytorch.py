@@ -177,6 +177,9 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-def run(sa, ct, p):
+def run(sa, ct, p, gpu=False):
     inputs = (torch.as_tensor(a, device='cpu') for a in (sa, ct, p))
-    return gsw_dHdT(*inputs)
+    out = gsw_dHdT(*inputs)
+    if gpu:
+        out = out.cpu()
+    return out

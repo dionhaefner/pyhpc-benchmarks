@@ -1,5 +1,4 @@
 import os
-import contextlib
 import importlib
 
 import numpy
@@ -9,124 +8,126 @@ class BackendNotSupported(Exception):
     pass
 
 
-def try_import(module):
-    try:
-        importlib.import_module(module)
-    except ImportError:
-        raise BackendNotSupported()
+class SetupContext:
+        def __init__(self, f):
+            self._f = f
+            self._f_args = (tuple(), dict())
+
+        def __call__(self, *args, **kwargs):
+            self._f_args = (args, kwargs)
+            return self
+
+        def __enter__(self):
+            self._env = os.environ.copy()
+            args, kwargs = self._f_args
+            self._f_iter = iter(self._f(*args, **kwargs))
+
+            try:
+                next(self._f_iter)
+            except Exception:
+                raise BackendNotSupported()
+
+            return self
+
+        def __exit__(self, *args, **kwargs):
+            try:
+                next(self._f_iter)
+            except StopIteration:
+                pass
+            os.environ = self._env
 
 
-def setup_function(f):
-    return contextlib.contextmanager(f)
+setup_function = SetupContext
 
 
 # setup function definitions
 
 @setup_function
-def setup_numpy():
-    try_import('numpy')
+def setup_numpy(gpu=False):
+    import numpy
     yield
 
 
 @setup_function
-def setup_bohrium():
-    oldenv = os.environ.get('OMP_NUM_THREADS')
+def setup_bohrium(gpu=False):
     try:
         os.environ.update(
             OMP_NUM_THREADS='1',
-            BH_STACK='openmp',
+            BH_STACK='opencl' if gpu else 'openmp',
             NUMPY_EXPERIMENTAL_ARRAY_FUNCTION='1',
         )
-        try_import('bohrium')
+        import bohrium
         yield
     finally:
-        if oldenv is None:
-            del os.environ['OMP_NUM_THREADS']
-        else:
-            os.environ['OMP_NUM_THREADS'] = oldenv
         # bohrium does things to numpy
         importlib.reload(numpy)
 
 
 @setup_function
-def setup_theano():
-    oldenv = os.environ.get('OMP_NUM_THREADS')
-    try:
+def setup_theano(gpu=False):
+    os.environ.update(
+        OMP_NUM_THREADS='1',
+    )
+    if gpu:
+        raise
         os.environ.update(
-            OMP_NUM_THREADS='1',
+            THEANO_FLAGS='device=cuda',
         )
-        try_import('theano')
-        yield
-    finally:
-        if oldenv is None:
-            del os.environ['OMP_NUM_THREADS']
-        else:
-            os.environ['OMP_NUM_THREADS'] = oldenv
-
-
-@setup_function
-def setup_numba():
-    try_import('numba')
+    import theano
     yield
 
 
 @setup_function
-def setup_jax():
-    oldenv = os.environ.get('XLA_FLAGS')
-    try:
-        os.environ.update(
-            XLA_FLAGS=(
-                "--xla_cpu_multi_thread_eigen=false "
-                "intra_op_parallelism_threads=1 "
-                "inter_op_parallelism_threads=1 "
-            )
-        )
-
-        try_import('jax')
-        from jax.config import config
-        # use 64 bit floats
-        config.update('jax_enable_x64', True)
-        yield
-    finally:
-        if oldenv is None:
-            del os.environ['XLA_FLAGS']
-        else:
-            os.environ['XLA_FLAGS'] = oldenv
+def setup_numba(gpu=False):
+    import numba
+    yield
 
 
 @setup_function
-def setup_pytorch():
-    oldenv = os.environ.get('OMP_NUM_THREADS')
-    try:
-        os.environ.update(
-            OMP_NUM_THREADS='1',
-        )
-        try_import('torch')
-        yield
-    finally:
-        if oldenv is None:
-            del os.environ['OMP_NUM_THREADS']
-        else:
-            os.environ['OMP_NUM_THREADS'] = oldenv
+def setup_jax(gpu=False):
+    os.environ.update(
+        XLA_FLAGS=(
+            "--xla_cpu_multi_thread_eigen=false "
+            "intra_op_parallelism_threads=1 "
+            "inter_op_parallelism_threads=1 "
+        ),
+        XLA_PYTHON_CLIENT_PREALLOCATE="false",
+    )
+
+    import jax
+    from jax.config import config
+    # use 64 bit floats
+    config.update('jax_enable_x64', True)
+    yield
 
 
 @setup_function
-def setup_tensorflow():
-    oldenv = os.environ.get('OMP_NUM_THREADS')
-    try:
-        os.environ.update(
-            OMP_NUM_THREADS='1',
-        )
-        try_import('tensorflow')
-        import tensorflow as tf
-        tf.config.threading.set_inter_op_parallelism_threads(1)
-        tf.config.threading.set_intra_op_parallelism_threads(1)
-        yield
-    finally:
-        if oldenv is None:
-            del os.environ['OMP_NUM_THREADS']
-        else:
-            os.environ['OMP_NUM_THREADS'] = oldenv
+def setup_pytorch(gpu=False):
+    os.environ.update(
+        OMP_NUM_THREADS='1',
+    )
+    import torch
+    if gpu:
+        assert torch.cuda.is_available()
+        assert torch.cuda.device_count() > 0
+    yield
+
+
+@setup_function
+def setup_tensorflow(gpu=False):
+    os.environ.update(
+        OMP_NUM_THREADS='1',
+    )
+    import tensorflow as tf
+    tf.config.threading.set_inter_op_parallelism_threads(1)
+    tf.config.threading.set_intra_op_parallelism_threads(1)
+
+    if gpu:
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
+    else:
+        tf.config.experimental.set_visible_devices([], 'GPU')
+    yield
 
 
 __backends__ = {

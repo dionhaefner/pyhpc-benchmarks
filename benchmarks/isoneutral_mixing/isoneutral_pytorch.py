@@ -200,8 +200,10 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
-def run(*inputs):
+def run(*inputs, gpu=False):
     with torch.no_grad():
-        inputs = [torch.as_tensor(a, device='cpu') for a in inputs]
+        inputs = [torch.as_tensor(a, device='cuda' if gpu else 'cpu') for a in inputs]
         outputs = isoneutral_diffusion_pre(*inputs)
+        if gpu:
+            outputs = [o.cpu() for o in outputs]
         return outputs

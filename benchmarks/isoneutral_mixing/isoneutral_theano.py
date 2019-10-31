@@ -232,7 +232,7 @@ symbolic_inputs = [
 isoneutral_theano = theano.function(symbolic_inputs, isoneutral_diffusion_pre(*symbolic_inputs))
 
 
-def run(*inputs):
+def run(*inputs, gpu=False):
     inputs = list(inputs)
 
     for i in (4, 5):

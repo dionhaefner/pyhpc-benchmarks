@@ -178,7 +178,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     K_33[2:-2, 2:-2, -1] = 0.
 
 
-def run(*inputs):
+def run(*inputs, gpu=False):
     inputs = [bh.array(k) for k in inputs]
     isoneutral_diffusion_pre(*inputs)
     return [i.copy2numpy() for i in inputs[-7:]]
