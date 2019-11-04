@@ -1,3 +1,4 @@
+import numpy as np
 import theano
 import theano.tensor as T
 
@@ -245,4 +246,4 @@ def run(*inputs, gpu=False):
         inputs[i] = inputs[i].reshape(1, 1, -1)
 
     outputs = isoneutral_theano(*inputs)
-    return outputs
+    return [np.array(o) for o in outputs]

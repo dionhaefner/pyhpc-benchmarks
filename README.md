@@ -1,13 +1,18 @@
 # pyhpc-benchmarks
 
-This is a suite of benchmarks specifically tailored to test the *sequential* performance of various computational backends for Python.
+This is a suite of benchmarks to test the *sequential CPU* and GPU performance of various computational backends for Python.
+
+## Why?
+
 
 
 ## Supported backends
 
 - NumPy
 - Numba
-- Bohrium
-- Theano
-- Pythran
+- Jax
+- Tensorflow
 - Pytorch
+- Theano
+- Bohrium
+- CuPy

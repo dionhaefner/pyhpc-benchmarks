@@ -7,6 +7,7 @@
 ==========================================================================
 """
 
+import numpy as np
 import theano
 
 v01 = 9.998420897506056e+2
@@ -186,4 +187,4 @@ gsw_dHdT_theano = theano.function(symbolic_inputs, gsw_dHdT(*symbolic_inputs))
 
 
 def run(sa, ct, p, gpu=False):
-    return gsw_dHdT_theano(sa, ct, p)
+    return np.asarray(gsw_dHdT_theano(sa, ct, p))

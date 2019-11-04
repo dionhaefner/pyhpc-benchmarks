@@ -7,6 +7,7 @@
 ==========================================================================
 """
 
+import numpy as np
 import tensorflow as tf
 
 v01 = 9.998420897506056e+2
@@ -182,4 +183,4 @@ gsw_dHdT_tf = tf.function(gsw_dHdT)
 
 def run(sa, ct, p, gpu=False):
     inputs = (tf.convert_to_tensor(a) for a in (sa, ct, p))
-    return gsw_dHdT_tf(*inputs)
+    return np.asarray(gsw_dHdT_tf(*inputs))

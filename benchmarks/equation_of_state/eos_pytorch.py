@@ -7,6 +7,7 @@
 ==========================================================================
 """
 
+import numpy as np
 import torch
 
 
@@ -183,4 +184,4 @@ def run(sa, ct, p, gpu=False):
         out = gsw_dHdT(*inputs)
         if gpu:
             out = out.cpu()
-        return out
+        return np.asarray(out)

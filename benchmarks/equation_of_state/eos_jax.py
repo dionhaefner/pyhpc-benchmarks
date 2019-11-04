@@ -180,4 +180,4 @@ def gsw_dHdT(sa, ct, p):
 
 
 def run(sa, ct, p, gpu=False):
-    return gsw_dHdT(sa, ct, p).block_until_ready()
+    return np.asarray(gsw_dHdT(sa, ct, p))

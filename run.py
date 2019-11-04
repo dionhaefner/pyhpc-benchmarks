@@ -257,6 +257,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                             f'Warning: inconsistent results for size {size}',
                             err=True
                         )
+                        warned[size] = True
                 else:
                     results[size] = res
 

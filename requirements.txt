@@ -1,9 +1,0 @@
-bohrium
-click
-jax
-jaxlib
-numba
-numpy
-tensorflow
-theano
-torch
