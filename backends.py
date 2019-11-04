@@ -99,7 +99,7 @@ def setup_jax(gpu=False):
             'inter_op_parallelism_threads=1 '
         ),
         XLA_PYTHON_CLIENT_PREALLOCATE='false',
-        JAX_PLATFORM_NAME='gpu' if gpu else 'cpu'
+        JAX_PLATFORM_NAME='gpu' if gpu else 'cpu',
     )
 
     import jax
@@ -129,6 +129,7 @@ def setup_pytorch(gpu=False):
 def setup_tensorflow(gpu=False):
     os.environ.update(
         OMP_NUM_THREADS='1',
+        XLA_PYTHON_CLIENT_PREALLOCATE='false',
     )
     import tensorflow as tf
     tf.config.threading.set_inter_op_parallelism_threads(1)
@@ -136,7 +137,7 @@ def setup_tensorflow(gpu=False):
 
     if gpu:
         gpus = tf.config.experimental.list_physical_devices('GPU')
-        tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
+        assert gpus
     else:
         tf.config.experimental.set_visible_devices([], 'GPU')
     yield
