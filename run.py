@@ -206,9 +206,9 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
         try:
             with setup_functions[b](gpu=gpu):
                 pass
-        except BackendNotSupported:
+        except BackendNotSupported as e:
             click.echo(
-                f'Setup for backend "{b}" failed (skipping)',
+                f'Setup for backend "{b}" failed (skipping), reason: {e!s}',
                 err=True
             )
             backend.remove(b)

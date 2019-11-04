@@ -24,8 +24,8 @@ class SetupContext:
 
             try:
                 next(self._f_iter)
-            except Exception:
-                raise BackendNotSupported()
+            except Exception as e:
+                raise BackendNotSupported(str(e)) from None
 
             return self
 
