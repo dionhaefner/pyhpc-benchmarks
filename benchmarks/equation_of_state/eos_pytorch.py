@@ -178,10 +178,13 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
+def prepare_inputs(sa, ct, p, gpu):
+    return [torch.as_tensor(a, device='cuda' if gpu else 'cpu') for a in (sa, ct, p)]
+
+
 def run(sa, ct, p, gpu=False):
     with torch.no_grad():
-        inputs = (torch.as_tensor(a, device='cuda' if gpu else 'cpu') for a in (sa, ct, p))
-        out = gsw_dHdT(*inputs)
+        out = gsw_dHdT(sa, ct, p)
         if gpu:
             out = out.cpu()
         return np.asarray(out)

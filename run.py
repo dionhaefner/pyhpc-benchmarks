@@ -254,7 +254,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                 if size in results:
                     if not check_consistency(results[size], res) and not warned[size]:
                         click.echo(
-                            f'Warning: inconsistent results for size {size}',
+                            f'\nWarning: inconsistent results for size {size}',
                             err=True
                         )
                         warned[size] = True

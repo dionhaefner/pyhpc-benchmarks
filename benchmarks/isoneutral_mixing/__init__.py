@@ -50,6 +50,8 @@ def try_import(backend):
 def get_callable(backend, size, gpu=False):
     backend_module = try_import(backend)
     inputs = generate_inputs(size)
+    if hasattr(backend_module, 'prepare_inputs'):
+        inputs = backend_module.prepare_inputs(*inputs, gpu=gpu)
     return functools.partial(backend_module.run, *inputs, gpu=gpu)
 
 

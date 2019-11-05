@@ -1,3 +1,4 @@
+import numpy
 import jax
 import jax.numpy as np
 
@@ -232,8 +233,12 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
+def prepare_inputs(*inputs, gpu):
+    return [np.array(k) for k in inputs]
+
+
 def run(*inputs, gpu=False):
     outputs = isoneutral_diffusion_pre(*inputs)
     for o in outputs:
         o.block_until_ready()
-    return [np.array(o) for o in outputs]
+    return [numpy.asarray(o) for o in outputs]

@@ -177,7 +177,10 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
+def prepare_inputs(sa, ct, p, gpu):
+    return [bh.array(k) for k in (sa, ct, p)]
+
+
 def run(sa, ct, p, gpu=False):
-    sa, ct, p = (bh.array(k) for k in (sa, ct, p))
     out = gsw_dHdT(sa, ct, p)
     return out.copy2numpy()

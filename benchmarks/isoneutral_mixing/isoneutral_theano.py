@@ -233,7 +233,7 @@ symbolic_inputs = [
 isoneutral_theano = theano.function(symbolic_inputs, isoneutral_diffusion_pre(*symbolic_inputs))
 
 
-def run(*inputs, gpu=False):
+def prepare_inputs(*inputs, gpu):
     inputs = list(inputs)
 
     for i in (4, 5):
@@ -245,5 +245,9 @@ def run(*inputs, gpu=False):
     for i in (8, 9, 14):
         inputs[i] = inputs[i].reshape(1, 1, -1)
 
+    return inputs
+
+
+def run(*inputs, gpu=False):
     outputs = isoneutral_theano(*inputs)
     return [np.array(o) for o in outputs]
