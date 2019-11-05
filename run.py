@@ -126,17 +126,16 @@ def get_benchmark_module(file_path):
     return bm_module, import_path
 
 
-def check_consistency(res1, res2, backend, gpu):
+def check_consistency(res1, res2):
     if isinstance(res1, (tuple, list)):
         if not len(res1) == len(res2):
             return False
 
-        return all(check_consistency(r1, r2, backend, gpu) for r1, r2 in zip(res1, res2))
+        return all(check_consistency(r1, r2) for r1, r2 in zip(res1, res2))
 
-    return np.allclose(
-        convert_to_numpy(res1, backend, gpu),
-        convert_to_numpy(res2, backend, gpu)
-    )
+    assert isinstance(res1, np.ndarray)
+    assert isinstance(res2, np.ndarray)
+    return np.allclose(res1, res2)
 
 
 @click.command('run')
@@ -255,14 +254,20 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                         res = run()
 
                 if size in results:
-                    if not check_consistency(results[size], res, b, gpu) and not warned[size]:
+                    if warned[size]:
+                        continue
+                    is_consistent = check_consistency(
+                        results[size],
+                        convert_to_numpy(res, b, gpu)
+                    )
+                    if not is_consistent:
                         click.echo(
                             f'\nWarning: inconsistent results for size {size}',
                             err=True
                         )
                         warned[size] = True
                 else:
-                    results[size] = res
+                    results[size] = convert_to_numpy(res, b, gpu)
 
                 timings[(b, size)].append(t.elapsed)
                 pbar.update(1. / (repetitions[(b, size)] + burnin))
