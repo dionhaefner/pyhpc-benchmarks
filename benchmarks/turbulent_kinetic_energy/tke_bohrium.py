@@ -2,7 +2,7 @@ import bohrium as bh
 
 
 def where(mask, a, b):
-    return bh.where(mask, a, b)
+    return mask * a + bh.logical_not(mask) * b
 
 
 def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):

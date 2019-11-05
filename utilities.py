@@ -26,4 +26,4 @@ def estimate_repetitions(func, args=(), target_time=10, powers_of=10):
     time_per_rep = t.elapsed
     exponent = math.log(target_time / time_per_rep, powers_of)
     num_reps = int(powers_of ** round(exponent))
-    return max(10, num_reps)
+    return max(powers_of, num_reps)
