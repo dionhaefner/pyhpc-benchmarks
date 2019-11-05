@@ -126,16 +126,16 @@ def get_benchmark_module(file_path):
     return bm_module, import_path
 
 
-def check_consistency(res1, res2):
+def check_consistency(res1, res2, backend, gpu):
     if isinstance(res1, (tuple, list)):
         if not len(res1) == len(res2):
             return False
 
-        return all(check_consistency(r1, r2) for r1, r2 in zip(res1, res2))
+        return all(check_consistency(r1, r2, backend, gpu) for r1, r2 in zip(res1, res2))
 
     return np.allclose(
-        convert_to_numpy(res1),
-        convert_to_numpy(res2)
+        convert_to_numpy(res1, backend, gpu),
+        convert_to_numpy(res2, backend, gpu)
     )
 
 
@@ -255,7 +255,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                         res = run()
 
                 if size in results:
-                    if not check_consistency(results[size], res) and not warned[size]:
+                    if not check_consistency(results[size], res, b, gpu) and not warned[size]:
                         click.echo(
                             f'\nWarning: inconsistent results for size {size}',
                             err=True
