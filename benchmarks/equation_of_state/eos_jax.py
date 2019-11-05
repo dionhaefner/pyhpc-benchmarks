@@ -7,7 +7,6 @@
 ==========================================================================
 """
 
-import numpy
 import jax
 import jax.numpy as np
 
@@ -185,4 +184,4 @@ def prepare_inputs(sa, ct, p, gpu):
 
 
 def run(sa, ct, p, gpu=False):
-    return numpy.asarray(gsw_dHdT(sa, ct, p))
+    return gsw_dHdT(sa, ct, p)

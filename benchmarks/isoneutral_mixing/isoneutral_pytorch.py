@@ -375,7 +375,6 @@ def run(*inputs, gpu=False):
     with torch.no_grad():
         if gpu:
             outputs = isoneutral_diffusion_pre_gpu(*inputs)
-            outputs = [o.cpu() for o in outputs]
         else:
             outputs = isoneutral_diffusion_pre(*inputs)
         return outputs

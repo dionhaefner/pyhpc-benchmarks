@@ -4,6 +4,34 @@ import importlib
 import numpy
 
 
+def convert_to_numpy(arr, backend, gpu=False):
+    if isinstance(arr, numpy.ndarray):
+        return arr
+
+    if backend == 'bohrium':
+        return arr.copy2numpy()
+
+    if backend == 'cupy':
+        return arr.get()
+
+    if backend == 'jax':
+        return numpy.asarray(arr)
+
+    if backend == 'pytorch':
+        if gpu:
+            return numpy.asarray(arr.cpu())
+        else:
+            return numpy.asarray(arr)
+
+    if backend == 'tensorflow':
+        return numpy.asarray(arr)
+
+    if backend == 'theano':
+        return numpy.asarray(arr)
+
+    raise RuntimeError(f'Got unexpected array / backend combination: {type(arr)} / {backend}')
+
+
 class BackendNotSupported(Exception):
     pass
 

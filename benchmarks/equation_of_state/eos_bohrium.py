@@ -183,4 +183,5 @@ def prepare_inputs(sa, ct, p, gpu):
 
 def run(sa, ct, p, gpu=False):
     out = gsw_dHdT(sa, ct, p)
-    return out.copy2numpy()
+    bh.flush()
+    return out

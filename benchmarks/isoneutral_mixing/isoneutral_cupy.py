@@ -185,4 +185,4 @@ def prepare_inputs(*inputs, gpu):
 
 def run(*inputs, gpu=False):
     isoneutral_diffusion_pre(*inputs)
-    return [k.get() for k in inputs[-7:]]
+    return inputs[-7:]

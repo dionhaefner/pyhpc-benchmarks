@@ -186,4 +186,5 @@ def prepare_inputs(*inputs, gpu):
 
 def run(*inputs, gpu=False):
     isoneutral_diffusion_pre(*inputs)
-    return [i.copy2numpy() for i in inputs[-7:]]
+    bh.flush()
+    return inputs[-7:]

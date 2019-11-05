@@ -186,4 +186,4 @@ def prepare_inputs(sa, ct, p, gpu):
 
 
 def run(sa, ct, p, gpu=False):
-    return np.asarray(gsw_dHdT_tf(sa, ct, p))
+    return gsw_dHdT_tf(sa, ct, p)

@@ -250,4 +250,4 @@ def prepare_inputs(*inputs, gpu):
 
 def run(*inputs, gpu=False):
     outputs = isoneutral_theano(*inputs)
-    return [np.array(o) for o in outputs]
+    return outputs

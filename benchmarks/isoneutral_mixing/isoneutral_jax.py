@@ -241,4 +241,4 @@ def run(*inputs, gpu=False):
     outputs = isoneutral_diffusion_pre(*inputs)
     for o in outputs:
         o.block_until_ready()
-    return [numpy.asarray(o) for o in outputs]
+    return outputs

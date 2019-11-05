@@ -7,7 +7,6 @@
 ==========================================================================
 """
 
-import numpy as np
 import cupy as cp
 
 v01 = 9.998420897506056e+2
@@ -183,4 +182,4 @@ def prepare_inputs(sa, ct, p, gpu):
 
 
 def run(sa, ct, p, gpu=False):
-    return np.asarray(gsw_dHdT(sa, ct, p).get())
+    return gsw_dHdT(sa, ct, p)

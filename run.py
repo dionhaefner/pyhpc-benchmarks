@@ -9,7 +9,7 @@ import collections
 import click
 import numpy as np
 
-from backends import __backends__ as setup_functions, BackendNotSupported
+from backends import __backends__ as setup_functions, BackendNotSupported, convert_to_numpy
 from utilities import Timer, estimate_repetitions
 
 
@@ -133,7 +133,10 @@ def check_consistency(res1, res2):
 
         return all(check_consistency(r1, r2) for r1, r2 in zip(res1, res2))
 
-    return np.allclose(res1, res2)
+    return np.allclose(
+        convert_to_numpy(res1),
+        convert_to_numpy(res2)
+    )
 
 
 @click.command('run')
