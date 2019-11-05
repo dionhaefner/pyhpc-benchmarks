@@ -239,7 +239,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
     random.shuffle(all_runs)
 
     results = {}
-    warned = {s: False for s in size}
+    checked = {r: False for r in runs}
 
     pbar = click.progressbar(
         label=f'Running {len(all_runs)} benchmarks...', length=len(runs)
@@ -253,21 +253,20 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                     with Timer() as t:
                         res = run()
 
-                if size in results:
-                    if warned[size]:
-                        continue
-                    is_consistent = check_consistency(
-                        results[size],
-                        convert_to_numpy(res, b, gpu)
-                    )
-                    if not is_consistent:
-                        click.echo(
-                            f'\nWarning: inconsistent results for size {size}',
-                            err=True
+                if not checked[(b, size)]:
+                    if size in results:
+                        is_consistent = check_consistency(
+                            results[size],
+                            convert_to_numpy(res, b, gpu)
                         )
-                        warned[size] = True
-                else:
-                    results[size] = convert_to_numpy(res, b, gpu)
+                        if not is_consistent:
+                            click.echo(
+                                f'\nWarning: inconsistent results for size {size}',
+                                err=True
+                            )
+                    else:
+                        results[size] = convert_to_numpy(res, b, gpu)
+                    checked[(b, size)] = True
 
                 timings[(b, size)].append(t.elapsed)
                 pbar.update(1. / (repetitions[(b, size)] + burnin))
