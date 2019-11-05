@@ -177,7 +177,7 @@ def check_consistency(res1, res2):
 )
 def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=False):
     if len(size) == 0:
-        size = [2 ** i for i in range(12, 25, 2)]
+        size = [2 ** i for i in range(12, 23, 2)]
 
     try:
         bm_module, bm_identifier = get_benchmark_module(benchmark)
