@@ -180,8 +180,13 @@ def gsw_dHdT(sa, ct, p):
 
 
 def prepare_inputs(sa, ct, p, gpu):
-    return [np.array(k) for k in (sa, ct, p)]
+    out = [np.array(k) for k in (sa, ct, p)]
+    for o in out:
+        o.block_until_ready()
+    return out
 
 
 def run(sa, ct, p, gpu=False):
-    return gsw_dHdT(sa, ct, p)
+    out = gsw_dHdT(sa, ct, p)
+    out.block_until_ready()
+    return out

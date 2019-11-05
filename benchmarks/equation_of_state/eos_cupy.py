@@ -178,7 +178,9 @@ def gsw_dHdT(sa, ct, p):
 
 
 def prepare_inputs(sa, ct, p, gpu):
-    return [cp.asarray(k) for k in (sa, ct, p)]
+    out = [cp.asarray(k) for k in (sa, ct, p)]
+    cp.cuda.stream.get_current_stream().synchronize()
+    return out
 
 
 def run(sa, ct, p, gpu=False):

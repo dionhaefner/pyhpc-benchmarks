@@ -180,7 +180,9 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
 
 
 def prepare_inputs(*inputs, gpu):
-    return [cp.asarray(k) for k in inputs]
+    out = [cp.asarray(k) for k in inputs]
+    cp.cuda.stream.get_current_stream().synchronize()
+    return out
 
 
 def run(*inputs, gpu=False):

@@ -179,7 +179,10 @@ def gsw_dHdT(sa, ct, p):
 
 
 def prepare_inputs(sa, ct, p, gpu):
-    return [torch.as_tensor(a, device='cuda' if gpu else 'cpu') for a in (sa, ct, p)]
+    out = [torch.as_tensor(a, device='cuda' if gpu else 'cpu') for a in (sa, ct, p)]
+    if gpu:
+        torch.cuda.synchronize()
+    return out
 
 
 def run(sa, ct, p, gpu=False):
