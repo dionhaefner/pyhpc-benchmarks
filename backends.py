@@ -76,18 +76,21 @@ setup_function = SetupContext
 
 @setup_function
 def setup_numpy(gpu=False):
+    os.environ.update(
+        OMP_NUM_THREADS='1',
+    )
     import numpy
     yield
 
 
 @setup_function
 def setup_bohrium(gpu=False):
+    os.environ.update(
+        OMP_NUM_THREADS='1',
+        BH_STACK='opencl' if gpu else 'openmp',
+        NUMPY_EXPERIMENTAL_ARRAY_FUNCTION='1',
+    )
     try:
-        os.environ.update(
-            OMP_NUM_THREADS='1',
-            BH_STACK='opencl' if gpu else 'openmp',
-            NUMPY_EXPERIMENTAL_ARRAY_FUNCTION='1',
-        )
         import bohrium
         yield
     finally:
@@ -110,6 +113,9 @@ def setup_theano(gpu=False):
 
 @setup_function
 def setup_numba(gpu=False):
+    os.environ.update(
+        OMP_NUM_THREADS='1',
+    )
     import numba
     yield
 
