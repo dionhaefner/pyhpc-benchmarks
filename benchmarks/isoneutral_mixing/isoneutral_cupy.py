@@ -185,4 +185,5 @@ def prepare_inputs(*inputs, gpu):
 
 def run(*inputs, gpu=False):
     isoneutral_diffusion_pre(*inputs)
+    cp.cuda.stream.get_current_stream().synchronize()
     return inputs[-7:]

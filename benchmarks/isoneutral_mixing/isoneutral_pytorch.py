@@ -377,4 +377,6 @@ def run(*inputs, gpu=False):
             outputs = isoneutral_diffusion_pre_gpu(*inputs)
         else:
             outputs = isoneutral_diffusion_pre(*inputs)
-        return outputs
+    if gpu:
+        torch.cuda.synchronize()
+    return outputs

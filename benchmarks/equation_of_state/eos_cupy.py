@@ -182,4 +182,6 @@ def prepare_inputs(sa, ct, p, gpu):
 
 
 def run(sa, ct, p, gpu=False):
-    return gsw_dHdT(sa, ct, p)
+    out = gsw_dHdT(sa, ct, p)
+    cp.cuda.stream.get_current_stream().synchronize()
+    return out

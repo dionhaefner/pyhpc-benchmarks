@@ -185,4 +185,6 @@ def prepare_inputs(sa, ct, p, gpu):
 def run(sa, ct, p, gpu=False):
     with torch.no_grad():
         out = gsw_dHdT(sa, ct, p)
+    if gpu:
+        torch.cuda.synchronize()
     return out
