@@ -5,6 +5,10 @@ import numpy
 
 
 def convert_to_numpy(arr, backend, gpu=False):
+    """Converts an array or collection of arrays to np.ndarray"""
+    if isinstance(arr, (list, tuple)):
+        return [convert_to_numpy(subarr, backend, gpu) for subarr in arr]
+
     if isinstance(arr, numpy.ndarray):
         return arr
 
