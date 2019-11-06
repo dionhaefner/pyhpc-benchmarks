@@ -240,12 +240,15 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     """
     Add TKE if surface density flux drains TKE in uppermost box
     """
-    mask = tke[:, :, -1, taup1] < 0.0
-    tke_surf_corr = where(
-        mask,
-        -tke[:, :, -1, taup1] * 0.5 * dzw[-1] / dt_tke,
-        0.
+    mask = tke[2:-2, 2:-2, -1, taup1] < 0.0
+    tke_surf_corr = np.zeros_like(maskU[..., -1])
+    tke_surf_corr = jax.ops.index_update(
+        tke_surf_corr, jax.ops.index[2:-2, 2:-2],
+        where(mask,
+              -tke[2:-2, 2:-2, -1, taup1] * 0.5 * dzw[-1] / dt_tke,
+              0.)
     )
+
     tke = jax.ops.index_update(
         tke, jax.ops.index[2:-2, 2:-2, -1, taup1],
         np.maximum(0., tke[2:-2, 2:-2, -1, taup1])
