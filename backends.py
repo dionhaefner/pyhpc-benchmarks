@@ -79,7 +79,6 @@ def setup_numpy(gpu=False):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
-    import numpy
     yield
 
 
@@ -88,10 +87,9 @@ def setup_bohrium(gpu=False):
     os.environ.update(
         OMP_NUM_THREADS='1',
         BH_STACK='opencl' if gpu else 'openmp',
-        NUMPY_EXPERIMENTAL_ARRAY_FUNCTION='1',
     )
     try:
-        import bohrium
+        import bohrium  # noqa: F401
         yield
     finally:
         # bohrium does things to numpy
@@ -107,7 +105,7 @@ def setup_theano(gpu=False):
         os.environ.update(
             THEANO_FLAGS='device=cuda',
         )
-    import theano
+    import theano  # noqa: F401
     yield
 
 
@@ -116,7 +114,7 @@ def setup_numba(gpu=False):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
-    import numba
+    import numba  # noqa: F401
     yield
 
 
@@ -124,7 +122,7 @@ def setup_numba(gpu=False):
 def setup_cupy(gpu=False):
     if not gpu:
         raise RuntimeError('cupy requires GPU mode')
-    import cupy
+    import cupy  # noqa: F401
     yield
 
 

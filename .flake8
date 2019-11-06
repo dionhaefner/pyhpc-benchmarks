@@ -1,0 +1,9 @@
+[flake8]
+exclude = __init__.py
+ignore =
+    # Comments
+    E26,
+    # Lines starting / ending with binary operators
+    W503,
+    W504,
+max-line-length = 120
