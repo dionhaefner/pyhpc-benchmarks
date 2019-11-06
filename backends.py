@@ -9,7 +9,9 @@ def convert_to_numpy(arr, backend, gpu=False):
     if isinstance(arr, (list, tuple)):
         return [convert_to_numpy(subarr, backend, gpu) for subarr in arr]
 
-    if isinstance(arr, numpy.ndarray):
+    if type(arr) is numpy.ndarray:
+        # this is stricter than isinstance,
+        # we don't want subclasses to get passed through
         return arr
 
     if backend == 'bohrium':
