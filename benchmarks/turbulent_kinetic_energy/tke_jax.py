@@ -39,7 +39,8 @@ def solve_tridiag(a, b, c, d):
         a, b, c, d = x
         cp = c / (b - a * last_cp)
         dp = (d - a * last_dp) / (b - a * last_cp)
-        return np.stack((cp, dp)), np.stack((cp, dp))
+        new_primes = np.stack((cp, dp))
+        return new_primes, new_primes
 
     diags_stacked = np.stack(
         [arr.transpose((2, 0, 1)) for arr in (a, b, c, d)],

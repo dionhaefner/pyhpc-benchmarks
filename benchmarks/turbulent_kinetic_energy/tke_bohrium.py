@@ -193,9 +193,9 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     )
 
     dtke[2:-2, 2:-2, :, tau] = maskW[2:-2, 2:-2, :] * (-(flux_east[2:-2, 2:-2, :] - flux_east[1:-3, 2:-2, :])
-                                                                / (cost[bh.newaxis, 2:-2, bh.newaxis] * dxt[2:-2, bh.newaxis, bh.newaxis])
-                                                                - (flux_north[2:-2, 2:-2, :] - flux_north[2:-2, 1:-3, :])
-                                                                / (cost[bh.newaxis, 2:-2, bh.newaxis] * dyt[bh.newaxis, 2:-2, bh.newaxis]))
+        / (cost[bh.newaxis, 2:-2, bh.newaxis] * dxt[2:-2, bh.newaxis, bh.newaxis])
+        - (flux_north[2:-2, 2:-2, :] - flux_north[2:-2, 1:-3, :])
+        / (cost[bh.newaxis, 2:-2, bh.newaxis] * dyt[bh.newaxis, 2:-2, bh.newaxis]))
     dtke[:, :, 0, tau] += -flux_top[:, :, 0] / dzw[0]
     dtke[:, :, 1:-1, tau] += - \
         (flux_top[:, :, 1:-1] - flux_top[:, :, :-2]) / dzw[1:-1]
@@ -213,7 +213,10 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
 
 def prepare_inputs(*inputs, gpu):
     out = [bh.array(k) for k in inputs]
-    bh.flush()
+    for o in out:
+        # force allocation on target device
+        tmp = o * 1  # noqa: F841
+        bh.flush()
     return out
 
 

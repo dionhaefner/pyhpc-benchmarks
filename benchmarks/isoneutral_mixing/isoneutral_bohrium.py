@@ -179,9 +179,12 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
 
 
 def prepare_inputs(*inputs, gpu):
-    bh_inputs = [bh.array(k) for k in inputs]
-    bh.flush()
-    return bh_inputs
+    out = [bh.array(k) for k in inputs]
+    for o in out:
+        # force allocation on target device
+        tmp = o * 1  # noqa: F841
+        bh.flush()
+    return out
 
 
 def run(*inputs, gpu=False):
