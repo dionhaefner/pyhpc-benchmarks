@@ -160,10 +160,11 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     """
     Add TKE if surface density flux drains TKE in uppermost box
     """
-    mask = tke[:, :, -1, taup1] < 0.0
-    tke_surf_corr = where(
+    tke_surf_corr = bh.zeros(maskU.shape[:2])
+    mask = tke[2:-2, 2:-2, -1, taup1] < 0.0
+    tke_surf_corr[2:-2, 2:-2] = where(
         mask,
-        -tke[:, :, -1, taup1] * 0.5 * dzw[-1] / dt_tke,
+        -tke[2:-2, 2:-2, -1, taup1] * 0.5 * dzw[-1] / dt_tke,
         0.
     )
     tke[2:-2, 2:-2, -1, taup1] = bh.maximum(0., tke[2:-2, 2:-2, -1, taup1])
