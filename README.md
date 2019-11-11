@@ -188,6 +188,8 @@ Software stack:
 
 ### Equation of state
 
+An equation consisting of >100 terms with no data dependencies and only elementary math. This benchmark should represent a best-case scenario for vector instructions and GPU performance.
+
 #### CPU
 
 ```bash
@@ -455,6 +457,8 @@ size          backend     calls     mean      stdev     min       25%       medi
 
 ### Isoneutral mixing
 
+A more balanced routine with many data dependencies (stencil operations), and tensor shapes of up to 5 dimensions. This is the most expensive part of Veros, so in a way this is the benchmark that interests me the most.
+
 #### CPU
 
 ```bash
@@ -685,6 +689,8 @@ size          backend     calls     mean      stdev     min       25%       medi
 
 ### Turbulent kinetic energy
 
+This routine consists of some stencil operations and some linear algebra (a tridiagonal matrix solver), which cannot be vectorized.
+
 #### CPU
 
 ```bash
@@ -816,11 +822,11 @@ size          backend     calls     mean      stdev     min       25%       medi
 
 Lessons I learned by assembling these benchmarks: (your mileage may vary)
 
-- The performance of Jax seems very competitive, both on GPU and CPU.
-- Numba is a great choice on CPU if you don't mind writing explicit for loops (which can be more readable than a vectorized implementation).
+- The performance of Jax seems very competitive, both on GPU and CPU. It is consistently among the top implementations on CPU, and shows the best performance on GPU.
+- Numba is a great choice on CPU if you don't mind writing explicit for loops (which can be more readable than a vectorized implementation), being slightly faster than Jax with little effort.
 - If you have embarrasingly parallel workloads, speedups of > 1000x are easy to achieve on high-end GPUs.
 - Tensorflow is not great for applications like ours, since it lacks tools to apply partial updates to tensors (in the sense of `tensor[2:-2] = 0.`).
-- Don't bother using Pytorch or Tensorflow on CPU.
+- Don't bother using Pytorch or Tensorflow on CPU (you won't get much faster than NumPy).
 - CuPy is nice! Often you don't need to change anything in your NumPy code to have it run on GPU (with decent, but not outstanding performance).
 - Reaching Fortran performance on CPU with vectorized implementations is hard :)
 
