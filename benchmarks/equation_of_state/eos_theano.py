@@ -186,5 +186,5 @@ symbolic_inputs = [
 gsw_dHdT_theano = theano.function(symbolic_inputs, gsw_dHdT(*symbolic_inputs))
 
 
-def run(sa, ct, p, gpu=False):
+def run(sa, ct, p, device='cpu'):
     return gsw_dHdT_theano(sa, ct, p)

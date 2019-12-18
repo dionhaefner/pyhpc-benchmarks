@@ -178,7 +178,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     K_33[2:-2, 2:-2, -1] = 0.
 
 
-def prepare_inputs(*inputs, gpu):
+def prepare_inputs(*inputs, device):
     out = [bh.array(k) for k in inputs]
     for o in out:
         # force allocation on target device
@@ -187,7 +187,7 @@ def prepare_inputs(*inputs, gpu):
     return out
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     isoneutral_diffusion_pre(*inputs)
     bh.flush()
     return inputs[-7:]

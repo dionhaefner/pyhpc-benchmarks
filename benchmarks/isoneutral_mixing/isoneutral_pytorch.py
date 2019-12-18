@@ -367,16 +367,16 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
-def prepare_inputs(*inputs, gpu):
-    out = [torch.as_tensor(a, device='cuda' if gpu else 'cpu') for a in inputs]
-    if gpu:
+def prepare_inputs(*inputs, device):
+    out = [torch.as_tensor(a, device='cuda' if device == 'gpu' else 'cpu') for a in inputs]
+    if device == 'gpu':
         torch.cuda.synchronize()
     return out
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     with torch.no_grad():
-        if gpu:
+        if device == 'gpu':
             outputs = isoneutral_diffusion_pre_gpu(*inputs)
             torch.cuda.synchronize()
         else:

@@ -2,7 +2,7 @@ import numpy as np
 import numba as nb
 
 
-@nb.jit(nopython=True, cache=True)
+@nb.jit(nopython=True, fastmath=True, cache=True)
 def solve_tridiag(a, b, c, d):
     """
     Solves a tridiagonal matrix system with diagonals a, b, c and RHS vector d.
@@ -25,7 +25,7 @@ def solve_tridiag(a, b, c, d):
     return out
 
 
-@nb.jit(nopython=True, cache=True)
+@nb.jit(nopython=True, fastmath=True, cache=True)
 def _calc_cr(r_jp, r_j, r_jm, vel):
     """
     Calculates cr value used in superbee advection scheme
@@ -42,12 +42,12 @@ def _calc_cr(r_jp, r_j, r_jm, vel):
         return r_jp / fac
 
 
-@nb.jit(nopython=True, cache=True)
+@nb.jit(nopython=True, fastmath=True, cache=True)
 def limiter(cr):
     return max(0., max(min(1., 2. * cr), min(2., cr)))
 
 
-@nb.jit(nopython=True, cache=True)
+@nb.jit(nopython=True, fastmath=True, cache=True)
 def adv_flux_superbee_wgrid(adv_fe, adv_fn, adv_ft, var, u_wgrid, v_wgrid, w_wgrid, maskW, dxt, dyt, dzw, cost, cosu, dt_tracer):
     """
     Calculates advection of a tracer defined on Wgrid
@@ -104,7 +104,7 @@ def adv_flux_superbee_wgrid(adv_fe, adv_fn, adv_ft, var, u_wgrid, v_wgrid, w_wgr
                 adv_ft[i, j, k] = vel * (var[i, j, k+1] + var[i, j, k]) * 0.5 - abs(vel) * ((1. - cr) + u_cfl * cr) * r_j * 0.5
 
 
-@nb.jit(nopython=True, cache=True)
+@nb.jit(nopython=True, fastmath=True, cache=True)
 def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, kbot, kappaM, mxl, forc, forc_tke_surface, tke, dtke):
     nx, ny, nz = maskU.shape
 
@@ -226,6 +226,6 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     return tke, dtke, tke_surf_corr
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     outputs = integrate_tke(*inputs)
     return outputs

@@ -214,6 +214,6 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     return tke, dtke, tke_surf_corr
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     outputs = integrate_tke(*inputs)
     return outputs

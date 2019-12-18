@@ -61,7 +61,7 @@ v48 = 6.057902487546866e-17
 rho0 = 1024.0
 
 
-@nb.jit(nopython=True)
+@nb.jit(nopython=True, fastmath=True)
 def gsw_dHdT(sa, ct, p):
     """
     d/dT of dynamic enthalpy, analytical derivative
@@ -179,7 +179,7 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-@nb.jit(nopython=True)
+@nb.jit(nopython=True, fastmath=True)
 def gsw_dHdT_vec(sa, ct, p, out):
     ix, iy, iz = sa.shape
     for i in range(ix):
@@ -188,7 +188,7 @@ def gsw_dHdT_vec(sa, ct, p, out):
                 out[i, j, k] = gsw_dHdT(sa[i, j, k], ct[i, j, k], p[0, 0, k])
 
 
-def run(sa, ct, p, gpu=False):
+def run(sa, ct, p, device='cpu'):
     out = np.empty_like(sa)
     gsw_dHdT_vec(sa, ct, p, out)
     return out

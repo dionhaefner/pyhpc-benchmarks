@@ -212,7 +212,7 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     return tke, dtke, tke_surf_corr
 
 
-def prepare_inputs(*inputs, gpu):
+def prepare_inputs(*inputs, device):
     out = [bh.array(k) for k in inputs]
     for o in out:
         # force allocation on target device
@@ -221,7 +221,7 @@ def prepare_inputs(*inputs, gpu):
     return out
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     outputs = integrate_tke(*inputs)
     bh.flush()
     return outputs
