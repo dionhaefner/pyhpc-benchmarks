@@ -144,12 +144,14 @@ def setup_jax(device='cpu'):
 
     import jax
     from jax.config import config
-    # use 64 bit floats
-    config.update('jax_enable_x64', True)
 
     if device == 'tpu':
         config.update('jax_xla_backend', 'tpu_driver')
         config.update('jax_backend_target', os.environ.get('JAX_BACKEND_TARGET'))
+
+    if device != 'tpu':
+        # use 64 bit floats (not supported on TPU)
+        config.update('jax_enable_x64', True)
 
     if device == 'gpu':
         assert len(jax.devices()) > 0
