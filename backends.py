@@ -137,8 +137,10 @@ def setup_jax(device='cpu'):
             'inter_op_parallelism_threads=1 '
         ),
         XLA_PYTHON_CLIENT_PREALLOCATE='false',
-        JAX_PLATFORM_NAME=device,
     )
+
+    if device in ('cpu', 'gpu'):
+        os.environ.update(JAX_PLATFORM_NAME=device)
 
     import jax
     from jax.config import config
@@ -147,6 +149,7 @@ def setup_jax(device='cpu'):
 
     if device == 'tpu':
         config.update('jax_xla_backend', 'tpu_driver')
+        config.update('jax_backend_target', os.environ.get('JAX_BACKEND_TARGET'))
 
     if device == 'gpu':
         assert len(jax.devices()) > 0
