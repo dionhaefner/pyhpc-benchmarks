@@ -233,14 +233,14 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
-def prepare_inputs(*inputs, gpu):
+def prepare_inputs(*inputs, device):
     out = [np.array(k) for k in inputs]
     for o in out:
         o.block_until_ready()
     return out
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     outputs = isoneutral_diffusion_pre(*inputs)
     for o in outputs:
         o.block_until_ready()

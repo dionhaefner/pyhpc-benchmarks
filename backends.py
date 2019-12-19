@@ -4,10 +4,10 @@ import importlib
 import numpy
 
 
-def convert_to_numpy(arr, backend, gpu=False):
+def convert_to_numpy(arr, backend, device='cpu'):
     """Converts an array or collection of arrays to np.ndarray"""
     if isinstance(arr, (list, tuple)):
-        return [convert_to_numpy(subarr, backend, gpu) for subarr in arr]
+        return [convert_to_numpy(subarr, backend, device) for subarr in arr]
 
     if type(arr) is numpy.ndarray:
         # this is stricter than isinstance,
@@ -24,7 +24,7 @@ def convert_to_numpy(arr, backend, gpu=False):
         return numpy.asarray(arr)
 
     if backend == 'pytorch':
-        if gpu:
+        if device == 'gpu':
             return numpy.asarray(arr.cpu())
         else:
             return numpy.asarray(arr)
@@ -77,7 +77,7 @@ setup_function = SetupContext
 # setup function definitions
 
 @setup_function
-def setup_numpy(gpu=False):
+def setup_numpy(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
@@ -85,10 +85,10 @@ def setup_numpy(gpu=False):
 
 
 @setup_function
-def setup_bohrium(gpu=False):
+def setup_bohrium(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
-        BH_STACK='opencl' if gpu else 'openmp',
+        BH_STACK='opencl' if device == 'gpu' else 'openmp',
     )
     try:
         import bohrium  # noqa: F401
@@ -99,11 +99,11 @@ def setup_bohrium(gpu=False):
 
 
 @setup_function
-def setup_theano(gpu=False):
+def setup_theano(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
-    if gpu:
+    if device == 'gpu':
         os.environ.update(
             THEANO_FLAGS='device=cuda',
         )
@@ -112,7 +112,7 @@ def setup_theano(gpu=False):
 
 
 @setup_function
-def setup_numba(gpu=False):
+def setup_numba(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
@@ -121,15 +121,15 @@ def setup_numba(gpu=False):
 
 
 @setup_function
-def setup_cupy(gpu=False):
-    if not gpu:
+def setup_cupy(device='cpu'):
+    if device != 'gpu':
         raise RuntimeError('cupy requires GPU mode')
     import cupy  # noqa: F401
     yield
 
 
 @setup_function
-def setup_jax(gpu=False):
+def setup_jax(device='cpu'):
     os.environ.update(
         XLA_FLAGS=(
             '--xla_cpu_multi_thread_eigen=false '
@@ -137,34 +137,42 @@ def setup_jax(gpu=False):
             'inter_op_parallelism_threads=1 '
         ),
         XLA_PYTHON_CLIENT_PREALLOCATE='false',
-        JAX_PLATFORM_NAME='gpu' if gpu else 'cpu',
     )
+
+    if device in ('cpu', 'gpu'):
+        os.environ.update(JAX_PLATFORM_NAME=device)
 
     import jax
     from jax.config import config
-    # use 64 bit floats
-    config.update('jax_enable_x64', True)
 
-    if gpu:
+    if device == 'tpu':
+        config.update('jax_xla_backend', 'tpu_driver')
+        config.update('jax_backend_target', os.environ.get('JAX_BACKEND_TARGET'))
+
+    if device != 'tpu':
+        # use 64 bit floats (not supported on TPU)
+        config.update('jax_enable_x64', True)
+
+    if device == 'gpu':
         assert len(jax.devices()) > 0
 
     yield
 
 
 @setup_function
-def setup_pytorch(gpu=False):
+def setup_pytorch(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
     import torch
-    if gpu:
+    if device == 'gpu':
         assert torch.cuda.is_available()
         assert torch.cuda.device_count() > 0
     yield
 
 
 @setup_function
-def setup_tensorflow(gpu=False):
+def setup_tensorflow(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
         XLA_PYTHON_CLIENT_PREALLOCATE='false',
@@ -173,7 +181,7 @@ def setup_tensorflow(gpu=False):
     tf.config.threading.set_inter_op_parallelism_threads(1)
     tf.config.threading.set_intra_op_parallelism_threads(1)
 
-    if gpu:
+    if device == 'gpu':
         gpus = tf.config.experimental.list_physical_devices('GPU')
         assert gpus
     else:

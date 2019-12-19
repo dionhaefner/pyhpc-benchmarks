@@ -2,7 +2,7 @@ import numpy as np
 import numba as nb
 
 
-@nb.jit(nopython=True)
+@nb.jit(nopython=True, fastmath=True)
 def get_drhodT(salt, temp, p):
     rho0 = 1024.0
     z0 = 0.0
@@ -17,14 +17,14 @@ def get_drhodT(salt, temp, p):
     return -(betaTs * thetas + betaT * (1 - gammas * grav * zz * rho0)) * rho0
 
 
-@nb.jit(nopython=True)
+@nb.jit(nopython=True, fastmath=True)
 def get_drhodS(salt, temp, p):
     betaS = 0.78e-3
     rho0 = 1024.
     return betaS * rho0
 
 
-@nb.jit(nopython=True)
+@nb.jit(nopython=True, fastmath=True)
 def dm_taper(sx):
     """
     tapering function for isopycnal slopes
@@ -34,7 +34,7 @@ def dm_taper(sx):
     return 0.5 * (1. + np.tanh((-np.abs(sx) + iso_slopec) / iso_dslope))
 
 
-@nb.jit(nopython=True, cache=True)
+@nb.jit(nopython=True, fastmath=True, cache=True)
 def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, salt, temp, zt, K_iso, K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by):
     """
     Isopycnal diffusion for tracer
@@ -205,6 +205,6 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
             K_33[i, j, -1] = 0.
 
 
-def run(*inputs, gpu=False):
+def run(*inputs, device='cpu'):
     isoneutral_diffusion_pre(*inputs)
     return inputs[-7:]

@@ -177,7 +177,7 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-def prepare_inputs(*inputs, gpu):
+def prepare_inputs(*inputs, device):
     out = [bh.array(k) for k in inputs]
     for o in out:
         # force allocation on target device
@@ -186,7 +186,7 @@ def prepare_inputs(*inputs, gpu):
     return out
 
 
-def run(sa, ct, p, gpu=False):
+def run(sa, ct, p, device='cpu'):
     out = gsw_dHdT(sa, ct, p)
     bh.flush()
     return out

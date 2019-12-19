@@ -54,13 +54,14 @@ DEFAULT_SIZE = tuple(2 ** i for i in range(12, 23, 2))
     help='Number of initial iterations that are disregarded for final statistics',
 )
 @click.option(
-    '--gpu/--cpu',
+    '--device',
     required=False,
-    default=False,
-    is_flag=True,
-    help='Run benchmarks on GPU where supported by the backend [default: CPU]',
+    default='cpu',
+    type=click.Choice(['cpu', 'gpu', 'tpu']),
+    show_default=True,
+    help='Run benchmarks on given device where supported by the backend',
 )
-def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=False):
+def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device='cpu'):
     """HPC benchmarks for Python
 
     Usage:
@@ -71,7 +72,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
 
         $ taskset -c 0 python run.py benchmarks/equation_of_state
 
-        $ python run.py benchmarks/equation_of_state -b numpy -b jax --gpu
+        $ python run.py benchmarks/equation_of_state -b numpy -b jax --device gpu
 
     More information:
 
@@ -105,7 +106,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
 
     for b in backend.copy():
         try:
-            with setup_functions[b](gpu=gpu):
+            with setup_functions[b](device=device):
                 pass
         except BackendNotSupported as e:
             click.echo(
@@ -126,8 +127,8 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
         click.echo('Estimating repetitions...')
         repetitions = {}
         for b, s in runs:
-            with setup_functions[b](gpu=gpu):
-                run = bm_module.get_callable(b, s, gpu=gpu)
+            with setup_functions[b](device=device):
+                run = bm_module.get_callable(b, s, device=device)
                 repetitions[(b, s)] = estimate_repetitions(run)
     else:
         repetitions = {(b, s): repetitions for b, s in runs}
@@ -147,8 +148,8 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
     try:
         with pbar:
             for (b, size) in all_runs:
-                with setup_functions[b](gpu=gpu):
-                    run = bm_module.get_callable(b, size, gpu=gpu)
+                with setup_functions[b](device=device):
+                    run = bm_module.get_callable(b, size, device=device)
                     with Timer() as t:
                         res = run()
 
@@ -157,7 +158,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                     if size in results:
                         is_consistent = check_consistency(
                             results[size],
-                            convert_to_numpy(res, b, gpu)
+                            convert_to_numpy(res, b, device)
                         )
                         if not is_consistent:
                             click.echo(
@@ -165,7 +166,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
                                 err=True
                             )
                     else:
-                        results[size] = convert_to_numpy(res, b, gpu)
+                        results[size] = convert_to_numpy(res, b, device)
                     checked[(b, size)] = True
 
                 timings[(b, size)].append(t.elapsed)
@@ -179,7 +180,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, gpu=Fal
 
     finally:
         stats = compute_statistics(timings)
-        click.echo(format_output(stats, bm_identifier, gpu=gpu))
+        click.echo(format_output(stats, bm_identifier, device=device))
 
 
 if __name__ == '__main__':

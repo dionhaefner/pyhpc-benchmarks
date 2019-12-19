@@ -179,14 +179,14 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-def prepare_inputs(sa, ct, p, gpu):
+def prepare_inputs(sa, ct, p, device):
     out = [np.array(k) for k in (sa, ct, p)]
     for o in out:
         o.block_until_ready()
     return out
 
 
-def run(sa, ct, p, gpu=False):
+def run(sa, ct, p, device='cpu'):
     out = gsw_dHdT(sa, ct, p)
     out.block_until_ready()
     return out

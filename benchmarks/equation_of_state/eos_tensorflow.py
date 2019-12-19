@@ -181,9 +181,9 @@ def gsw_dHdT(sa, ct, p):
 gsw_dHdT_tf = tf.function(gsw_dHdT)
 
 
-def prepare_inputs(sa, ct, p, gpu):
+def prepare_inputs(sa, ct, p, device):
     return [tf.convert_to_tensor(a) for a in (sa, ct, p)]
 
 
-def run(sa, ct, p, gpu=False):
+def run(sa, ct, p, device='cpu'):
     return gsw_dHdT_tf(sa, ct, p)

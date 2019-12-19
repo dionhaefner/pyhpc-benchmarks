@@ -83,7 +83,7 @@ def compute_statistics(timings, burnin=1):
     return stats
 
 
-def format_output(stats, benchmark_title, gpu=False):
+def format_output(stats, benchmark_title, device='cpu'):
     stats = np.sort(stats, axis=0, order=['size', 'mean', 'max', 'median'])
 
     header = stats.dtype.names
@@ -109,7 +109,7 @@ def format_output(stats, benchmark_title, gpu=False):
         '',
         benchmark_title,
         '=' * len(benchmark_title),
-        f'Running on {"GPU" if gpu else "CPU"}',
+        f'Running on {device.upper()}',
         '',
         '  '.join(format_col(s, s) for s in header)
     ]

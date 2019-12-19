@@ -26,12 +26,12 @@ def try_import(backend):
         return None
 
 
-def get_callable(backend, size, gpu=False):
+def get_callable(backend, size, device='cpu'):
     backend_module = try_import(backend)
     inputs = generate_inputs(size)
     if hasattr(backend_module, 'prepare_inputs'):
-        inputs = backend_module.prepare_inputs(*inputs, gpu=gpu)
-    return functools.partial(backend_module.run, *inputs, gpu=gpu)
+        inputs = backend_module.prepare_inputs(*inputs, device=device)
+    return functools.partial(backend_module.run, *inputs, device=device)
 
 
 __implementations__ = (
