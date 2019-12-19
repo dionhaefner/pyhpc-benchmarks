@@ -12,7 +12,7 @@ Hardware at the time of writing (19 Dec 2019):
 Jax does not support 64bit floating point precision on TPU architectures (yet). 
 Therefore, the Jax + TPU results are not bit-identical to all other backends and devices, so it's not really an apples-to-apples comparison.
 
-**Caveat$^2$**:
+**Caveat²**:
 I didn't manage to get Bohrium to work on Colab, so it's missing from these results.
 
 ## Contents
