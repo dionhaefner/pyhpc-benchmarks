@@ -168,6 +168,7 @@ $ for backend in bohrium jax cupy pytorch tensorflow; do
 Lessons I learned by assembling these benchmarks: (your mileage may vary)
 
 - The performance of Jax seems very competitive, both on GPU and CPU. It is consistently among the top implementations on CPU, and shows the best performance on GPU.
+- Jax' performance on GPU seems to be quite hardware dependent. Jax performance significantly better (relatively speaking) on a Tesla P100 than a Tesla K80.
 - Numba is a great choice on CPU if you don't mind writing explicit for loops (which can be more readable than a vectorized implementation), being slightly faster than Jax with little effort.
 - If you have embarrasingly parallel workloads, speedups of > 1000x are easy to achieve on high-end GPUs.
 - Tensorflow is not great for applications like ours, since it lacks tools to apply partial updates to tensors (in the sense of `tensor[2:-2] = 0.`).
