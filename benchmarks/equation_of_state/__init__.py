@@ -19,15 +19,12 @@ def generate_inputs(size):
     return s, t, p
 
 
-def try_import(backend):
-    try:
-        return importlib.import_module(f'.eos_{backend}', __name__)
-    except ImportError:
-        return None
+def import_backend(backend):
+    return importlib.import_module(f'.eos_{backend}', __name__)
 
 
 def get_callable(backend, size, device='cpu'):
-    backend_module = try_import(backend)
+    backend_module = import_backend(backend)
     inputs = generate_inputs(size)
     if hasattr(backend_module, 'prepare_inputs'):
         inputs = backend_module.prepare_inputs(*inputs, device=device)
@@ -38,6 +35,7 @@ __implementations__ = (
     'bohrium',
     'cupy',
     'jax',
+    'mxnet',
     'numba',
     'numpy',
     'pytorch',

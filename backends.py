@@ -9,33 +9,34 @@ def convert_to_numpy(arr, backend, device='cpu'):
     if isinstance(arr, (list, tuple)):
         return [convert_to_numpy(subarr, backend, device) for subarr in arr]
 
-    if type(arr) is numpy.ndarray:
-        # this is stricter than isinstance,
-        # we don't want subclasses to get passed through
-        return arr
-
     if backend == 'bohrium':
-        return arr.copy2numpy()
+        arr = arr.copy2numpy()
 
     if backend == 'cupy':
-        return arr.get()
+        arr = arr.get()
 
     if backend == 'jax':
-        return numpy.asarray(arr)
+        arr = numpy.asarray(arr)
 
     if backend == 'pytorch':
         if device == 'gpu':
-            return numpy.asarray(arr.cpu())
+            arr = numpy.asarray(arr.cpu())
         else:
-            return numpy.asarray(arr)
+            arr = numpy.asarray(arr)
 
     if backend == 'tensorflow':
-        return numpy.asarray(arr)
+        arr = numpy.asarray(arr)
 
     if backend == 'theano':
-        return numpy.asarray(arr)
+        arr = numpy.asarray(arr)
 
-    raise RuntimeError(f'Got unexpected array / backend combination: {type(arr)} / {backend}')
+    if backend == 'mxnet':
+        arr = arr.asnumpy()
+
+    if type(arr) is not numpy.ndarray:
+        raise RuntimeError(f'Failed to copy array to NumPy (backend {backend}, type {type(arr)})')
+
+    return arr
 
 
 class BackendNotSupported(Exception):
@@ -189,6 +190,17 @@ def setup_tensorflow(device='cpu'):
     yield
 
 
+@setup_function
+def setup_mxnet(device='cpu'):
+    from mxnet import npx
+    npx.set_np()
+
+    if device == 'gpu':
+        assert npx.num_gpus() > 0
+
+    yield
+
+
 __backends__ = {
     'numpy': setup_numpy,
     'bohrium': setup_bohrium,
@@ -197,5 +209,6 @@ __backends__ = {
     'theano': setup_theano,
     'numba': setup_numba,
     'pytorch': setup_pytorch,
-    'tensorflow': setup_tensorflow
+    'tensorflow': setup_tensorflow,
+    'mxnet': setup_mxnet,
 }
