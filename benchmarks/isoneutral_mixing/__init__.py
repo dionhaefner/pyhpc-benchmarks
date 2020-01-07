@@ -60,6 +60,7 @@ __implementations__ = (
     'cupy',
     'numba',
     'numpy',
+    'mxnet',
     'jax',
     'pytorch',
     'theano',

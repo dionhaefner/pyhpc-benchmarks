@@ -63,5 +63,6 @@ __implementations__ = (
     'bohrium',
     'numba',
     'numpy',
+    'mxnet',
     'jax',
 )
