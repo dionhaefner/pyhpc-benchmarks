@@ -2,7 +2,8 @@ from mxnet import np, npx
 
 
 def where(mask, a, b):
-    return np.where(mask, a, b)
+    mask = mask.astype('uint8')
+    return a * mask + b * (1 - mask)
 
 
 def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):
