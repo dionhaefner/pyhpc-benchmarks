@@ -55,28 +55,28 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     """
     dTdz[:, :, :-1] = maskW[:, :, :-1] * \
         (temp[:, :, 1:, tau] - temp[:, :, :-1, tau]) / \
-        dzw[:-1].reshape(1, 1, -1)
+        dzw[np.newaxis, np.newaxis, :-1]
     dSdz[:, :, :-1] = maskW[:, :, :-1] * \
         (salt[:, :, 1:, tau] - salt[:, :, :-1, tau]) / \
-        dzw[:-1].reshape(1, 1, -1)
+        dzw[np.newaxis, np.newaxis, :-1]
 
     """
     gradients at eastern face of T cells
     """
     dTdx[:-1, :, :] = maskU[:-1, :, :] * (temp[1:, :, :, tau] - temp[:-1, :, :, tau]) \
-        / (dxu[:-1].reshape(-1, 1, 1) * cost.reshape(1, -1, 1))
+        / (dxu[:-1, np.newaxis, np.newaxis] * cost[np.newaxis, :, np.newaxis])
     dSdx[:-1, :, :] = maskU[:-1, :, :] * (salt[1:, :, :, tau] - salt[:-1, :, :, tau]) \
-        / (dxu[:-1].reshape(-1, 1, 1) * cost.reshape(1, -1, 1))
+        / (dxu[:-1, np.newaxis, np.newaxis] * cost[np.newaxis, :, np.newaxis])
 
     """
     gradients at northern face of T cells
     """
     dTdy[:, :-1, :] = maskV[:, :-1, :] * \
         (temp[:, 1:, :, tau] - temp[:, :-1, :, tau]) \
-        / dyu[:-1].reshape(1, -1, 1)
+        / dyu[np.newaxis, :-1, np.newaxis]
     dSdy[:, :-1, :] = maskV[:, :-1, :] * \
         (salt[:, 1:, :, tau] - salt[:, :-1, :, tau]) \
-        / dyu[:-1].reshape(1, -1, 1)
+        / dyu[np.newaxis, :-1, np.newaxis]
 
     def dm_taper(sx):
         """
@@ -104,19 +104,20 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
                 dSdz[1 + ip:-2 + ip, 2:-2, :-1 + kr or None]
             sxe = -drodxe / (np.minimum(0., drodze) - epsln)
             taper = dm_taper(sxe)
-            sumz[:, :, ki:] += dzw[:-1 + kr or None].reshape(1, 1, -1) * maskU[1:-2, 2:-2, ki:] \
+            sumz[:, :, ki:] += dzw[np.newaxis, np.newaxis, :-1 + kr or None] * maskU[1:-2, 2:-2, ki:] \
                 * np.maximum(K_iso_steep, diffloc[1:-2, 2:-2, ki:] * taper)
             Ai_ez[1:-2, 2:-2, ki:, ip, kr] = taper * \
                 sxe * maskU[1:-2, 2:-2, ki:]
-    K_11[1:-2, 2:-2, :] = sumz / (4. * dzt.reshape(1, 1, -1))
+    K_11[1:-2, 2:-2, :] = sumz / (4. * dzt[np.newaxis, np.newaxis, :])
 
     """
     Compute Ai_nz and K_22 on center of north face of T cell.
     """
-    diffloc[:, :, :] = 0
+    diffloc[...] = 0
     diffloc[2:-2, 1:-2, 1:] = 0.25 * (K_iso[2:-2, 1:-2, 1:] + K_iso[2:-2, 1:-2, :-1]
                                       + K_iso[2:-2, 2:-1, 1:] + K_iso[2:-2, 2:-1, :-1])
-    diffloc[2:-2, 1:-2, 0] = 0.5 * (K_iso[2:-2, 1:-2, 0] + K_iso[2:-2, 2:-1, 0])
+    diffloc[2:-2, 1:-2, 0] = 0.5 * \
+        (K_iso[2:-2, 1:-2, 0] + K_iso[2:-2, 2:-1, 0])
 
     sumz = np.zeros_like(K_11)[2:-2, 1:-2]
     for kr in range(2):
@@ -129,11 +130,11 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
                 dSdz[2:-2, 1 + jp:-2 + jp, :-1 + kr or None]
             syn = -drodyn / (np.minimum(0., drodzn) - epsln)
             taper = dm_taper(syn)
-            sumz[:, :, ki:] += dzw[:-1 + kr or None].reshape(1, 1, -1) \
+            sumz[:, :, ki:] += dzw[np.newaxis, np.newaxis, :-1 + kr or None] \
                 * maskV[2:-2, 1:-2, ki:] * np.maximum(K_iso_steep, diffloc[2:-2, 1:-2, ki:] * taper)
             Ai_nz[2:-2, 1:-2, ki:, jp, kr] = taper * \
                 syn * maskV[2:-2, 1:-2, ki:]
-    K_22[2:-2, 1:-2, :] = sumz / (4. * dzt.reshape(1, 1, -1))
+    K_22[2:-2, 1:-2, :] = sumz / (4. * dzt[np.newaxis, np.newaxis, :])
 
     """
     compute Ai_bx, Ai_by and K33 on top face of T cell.
@@ -152,7 +153,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
                 dSdx[1 + ip:-3 + ip, 2:-2, kr:-1 + kr or None]
             sxb = -drodxb / (np.minimum(0., drodzb) - epsln)
             taper = dm_taper(sxb)
-            sumx += dxu[1 + ip:-3 + ip].reshape(-1, 1, 1) * \
+            sumx += dxu[1 + ip:-3 + ip, np.newaxis, np.newaxis] * \
                 K_iso[2:-2, 2:-2, :-1] * taper * \
                 sxb**2 * maskW[2:-2, 2:-2, :-1]
             Ai_bx[2:-2, 2:-2, :-1, ip, kr] = taper * \
@@ -166,14 +167,14 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
                 dSdy[2:-2, 1 + jp:-3 + jp, kr:-1 + kr or None]
             syb = -drodyb / (np.minimum(0., drodzb) - epsln)
             taper = dm_taper(syb)
-            sumy += facty.reshape(1, -1, 1) * K_iso[2:-2, 2:-2, :-1] \
+            sumy += facty[np.newaxis, :, np.newaxis] * K_iso[2:-2, 2:-2, :-1] \
                 * taper * syb**2 * maskW[2:-2, 2:-2, :-1]
             Ai_by[2:-2, 2:-2, :-1, jp, kr] = taper * \
                 syb * maskW[2:-2, 2:-2, :-1]
 
-    K_33[2:-2, 2:-2, :-1] = sumx / (4 * dxt[2:-2].reshape(-1, 1, 1)) + \
-        sumy / (4 * dyt[2:-2].reshape(1, -1, 1)
-                * cost[2:-2].reshape(1, -1, 1))
+    K_33[2:-2, 2:-2, :-1] = sumx / (4 * dxt[2:-2, np.newaxis, np.newaxis]) + \
+        sumy / (4 * dyt[np.newaxis, 2:-2, np.newaxis]
+                * cost[np.newaxis, 2:-2, np.newaxis])
     K_33[2:-2, 2:-2, -1] = 0.
 
 

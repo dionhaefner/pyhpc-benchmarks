@@ -2,18 +2,17 @@ from mxnet import np, npx
 
 
 def where(mask, a, b):
-    return mask * a + (1 - mask) * b
+    return np.where(mask, a, b)
 
 
 def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):
-    ks = ks.astype('float64')
-    land_mask = (ks >= 0).reshape(*ks.shape, 1)
-    edge_mask = land_mask * (np.arange(a.shape[2], dtype=ks.dtype).reshape(1, 1, -1)
-                             == ks.reshape(*ks.shape, 1))
-    water_mask = land_mask * (np.arange(a.shape[2], dtype=ks.dtype).reshape(1, 1, -1)
-                              >= ks.reshape(*ks.shape, 1))
+    land_mask = (ks >= 0)[:, :, np.newaxis]
+    edge_mask = land_mask * (np.arange(a.shape[2], ctx=ks.context)[np.newaxis, np.newaxis, :]
+                             == ks[:, :, np.newaxis])
+    water_mask = land_mask * (np.arange(a.shape[2], ctx=ks.context)[np.newaxis, np.newaxis, :]
+                              >= ks[:, :, np.newaxis])
 
-    a_tri = water_mask * a * (1 - edge_mask)
+    a_tri = water_mask * a * np.logical_not(edge_mask)
     b_tri = where(water_mask, b, 1.)
     if b_edge is not None:
         b_tri = where(edge_mask, b_edge, b_tri)
@@ -72,18 +71,18 @@ def _adv_superbee(vel, var, mask, dx, axis, cost, cosu, dt_tracer):
     if axis == 0:
         sm1, s, sp1, sp2 = ((slice(1 + n, -2 + n or None), slice(2, -2), slice(None))
                             for n in range(-1, 3))
-        dx = cost[2:-2].reshape(1, -1, 1) * \
-            dx[1:-2].reshape(-1, 1, 1)
+        dx = cost[np.newaxis, 2:-2, np.newaxis] * \
+            dx[1:-2, np.newaxis, np.newaxis]
     elif axis == 1:
         sm1, s, sp1, sp2 = ((slice(2, -2), slice(1 + n, -2 + n or None), slice(None))
                             for n in range(-1, 3))
-        dx = (cost * dx)[1:-2].reshape(1, -1, 1)
-        velfac = cosu[1:-2].reshape(1, -1, 1)
+        dx = (cost * dx)[np.newaxis, 1:-2, np.newaxis]
+        velfac = cosu[np.newaxis, 1:-2, np.newaxis]
     elif axis == 2:
         vel, var, mask = (pad_z_edges(a) for a in (vel, var, mask))
         sm1, s, sp1, sp2 = ((slice(2, -2), slice(2, -2), slice(1 + n, -2 + n or None))
                             for n in range(-1, 3))
-        dx = dx[:-1].reshape(1, 1, -1)
+        dx = dx[np.newaxis, np.newaxis, :-1]
     else:
         raise ValueError('axis must be 0, 1, or 2')
     uCFL = np.abs(velfac * vel[s] * dt_tracer / dx)
@@ -100,17 +99,17 @@ def adv_flux_superbee_wgrid(adv_fe, adv_fn, adv_ft, var, u_wgrid, v_wgrid, w_wgr
     """
     maskUtr = np.zeros_like(maskW)
     maskUtr[:-1, :, :] = maskW[1:, :, :] * maskW[:-1, :, :]
-    adv_fe[:, :, :] = 0.
+    adv_fe[...] = 0.
     adv_fe[1:-2, 2:-2, :] = _adv_superbee(u_wgrid, var, maskUtr, dxt, 0, cost, cosu, dt_tracer)
 
     maskVtr = np.zeros_like(maskW)
     maskVtr[:, :-1, :] = maskW[:, 1:, :] * maskW[:, :-1, :]
-    adv_fn[:, :, :] = 0.
+    adv_fn[...] = 0.
     adv_fn[2:-2, 1:-2, :] = _adv_superbee(v_wgrid, var, maskVtr, dyt, 1, cost, cosu, dt_tracer)
 
     maskWtr = np.zeros_like(maskW)
     maskWtr[:, :, :-1] = maskW[:, :, 1:] * maskW[:, :, :-1]
-    adv_ft[:, :, :] = 0.
+    adv_ft[...] = 0.
     adv_ft[2:-2, 2:-2, :-1] = _adv_superbee(w_wgrid, var, maskWtr, dzw, 2, cost, cosu, dt_tracer)
 
 
@@ -148,24 +147,25 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     d_tri = np.zeros_like(maskU[2:-2, 2:-2])
     delta = np.zeros_like(maskU[2:-2, 2:-2])
 
-    delta[:, :, :-1] = dt_tke / dzt[1:].reshape(1, 1, -1) * alpha_tke * 0.5 \
+    delta[:, :, :-1] = dt_tke / dzt[np.newaxis, np.newaxis, 1:] * alpha_tke * 0.5 \
         * (kappaM[2:-2, 2:-2, :-1] + kappaM[2:-2, 2:-2, 1:])
 
     a_tri[:, :, 1:-1] = -delta[:, :, :-2] / \
-        dzw[1:-1].reshape(1, 1, -1)
+        dzw[np.newaxis, np.newaxis, 1:-1]
     a_tri[:, :, -1] = -delta[:, :, -2] / (0.5 * dzw[-1])
 
-    b_tri[:, :, 1:-1] = 1 + (delta[:, :, 1:-1] + delta[:, :, :-2]) / dzw[1:-1].reshape(1, 1, -1) \
+    b_tri[:, :, 1:-1] = 1 + (delta[:, :, 1:-1] + delta[:, :, :-2]) / dzw[np.newaxis, np.newaxis, 1:-1] \
         + dt_tke * c_eps \
         * sqrttke[2:-2, 2:-2, 1:-1] / mxl[2:-2, 2:-2, 1:-1]
     b_tri[:, :, -1] = 1 + delta[:, :, -2] / (0.5 * dzw[-1]) \
-        + dt_tke * c_eps / mxl[2:-2, 2:-2, -1] * sqrttke[2:-2, 2:-2, -1]
-    b_tri_edge = 1 + delta / dzw.reshape(1, 1, -1) \
+        + dt_tke * c_eps / mxl[2:-2, 2:-
+                                     2, -1] * sqrttke[2:-2, 2:-2, -1]
+    b_tri_edge = 1 + delta / dzw[np.newaxis, np.newaxis, :] \
         + dt_tke * c_eps / mxl[2:-2, 2:-2, :] * sqrttke[2:-2, 2:-2, :]
 
-    c_tri[:, :, :-1] = -delta[:, :, :-1] / dzw[:-1].reshape(1, 1, -1)
+    c_tri[:, :, :-1] = -delta[:, :, :-1] / dzw[np.newaxis, np.newaxis, :-1]
 
-    d_tri[:, :, :] = tke[2:-2, 2:-2, :, tau] + dt_tke * forc[2:-2, 2:-2, :]
+    d_tri[...] = tke[2:-2, 2:-2, :, tau] + dt_tke * forc[2:-2, 2:-2, :]
     d_tri[:, :, -1] += dt_tke * forc_tke_surface[2:-2, 2:-2] / (0.5 * dzw[-1])
 
     sol, water_mask = solve_implicit(ks, a_tri, b_tri, c_tri, d_tri, b_edge=b_tri_edge)
@@ -174,7 +174,7 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     """
     Add TKE if surface density flux drains TKE in uppermost box
     """
-    tke_surf_corr = np.zeros(maskU.shape[:2])
+    tke_surf_corr = np.zeros(maskU.shape[:2], ctx=maskU.context)
     mask = tke[2:-2, 2:-2, -1, taup1] < 0.0
     tke_surf_corr[2:-2, 2:-2] = where(
         mask,
@@ -187,30 +187,30 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     add tendency due to lateral diffusion
     """
     flux_east[:-1, :, :] = K_h_tke * (tke[1:, :, :, tau] - tke[:-1, :, :, tau]) \
-        / (cost.reshape(1, -1, 1) * dxu[:-1].reshape(-1, 1, 1)) * maskU[:-1, :, :]
+        / (cost[np.newaxis, :, np.newaxis] * dxu[:-1, np.newaxis, np.newaxis]) * maskU[:-1, :, :]
     flux_east[-1, :, :] = 0.
     flux_north[:, :-1, :] = K_h_tke * (tke[:, 1:, :, tau] - tke[:, :-1, :, tau]) \
-        / dyu[:-1].reshape(1, -1, 1) * maskV[:, :-1, :] * cosu[:-1].reshape(1, -1, 1)
+        / dyu[np.newaxis, :-1, np.newaxis] * maskV[:, :-1, :] * cosu[np.newaxis, :-1, np.newaxis]
     flux_north[:, -1, :] = 0.
     tke[2:-2, 2:-2, :, taup1] += dt_tke * maskW[2:-2, 2:-2, :] * \
         ((flux_east[2:-2, 2:-2, :] - flux_east[1:-3, 2:-2, :])
-            / (cost[2:-2].reshape(1, -1, 1) * dxt[2:-2].reshape(-1, 1, 1))
+            / (cost[np.newaxis, 2:-2, np.newaxis] * dxt[2:-2, np.newaxis, np.newaxis])
             + (flux_north[2:-2, 2:-2, :] - flux_north[2:-2, 1:-3, :])
-            / (cost[2:-2].reshape(1, -1, 1) * dyt[2:-2].reshape(1, -1, 1)))
+            / (cost[np.newaxis, 2:-2, np.newaxis] * dyt[np.newaxis, 2:-2, np.newaxis]))
 
     """
     add tendency due to advection
     """
     adv_flux_superbee_wgrid(
         flux_east, flux_north, flux_top, tke[:, :, :, tau],
-        u[:, :, :, tau], v[:, :, :, tau], w[:, :, :, tau], maskW, dxt, dyt, dzw,
+        u[..., tau], v[..., tau], w[..., tau], maskW, dxt, dyt, dzw,
         cost, cosu, dt_tracer
     )
 
     dtke[2:-2, 2:-2, :, tau] = maskW[2:-2, 2:-2, :] * (-(flux_east[2:-2, 2:-2, :] - flux_east[1:-3, 2:-2, :])
-                                                                / (cost[2:-2].reshape(1, -1, 1) * dxt[2:-2].reshape(-1, 1, 1))
+                                                                / (cost[np.newaxis, 2:-2, np.newaxis] * dxt[2:-2, np.newaxis, np.newaxis])
                                                                 - (flux_north[2:-2, 2:-2, :] - flux_north[2:-2, 1:-3, :])
-                                                                / (cost[2:-2].reshape(1, -1, 1) * dyt[2:-2].reshape(1, -1, 1)))
+                                                                / (cost[np.newaxis, 2:-2, np.newaxis] * dyt[np.newaxis, 2:-2, np.newaxis]))
     dtke[:, :, 0, tau] += -flux_top[:, :, 0] / dzw[0]
     dtke[:, :, 1:-1, tau] += - \
         (flux_top[:, :, 1:-1] - flux_top[:, :, :-2]) / dzw[1:-1]
