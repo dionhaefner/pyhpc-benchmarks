@@ -175,14 +175,14 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     """
     Add TKE if surface density flux drains TKE in uppermost box
     """
-    tke_surf_corr = np.zeros(maskU.shape[:2])
+    tke_surf_corr = cp.zeros(maskU.shape[:2])
     mask = tke[2:-2, 2:-2, -1, taup1] < 0.0
     tke_surf_corr[2:-2, 2:-2] = where(
         mask,
         -tke[2:-2, 2:-2, -1, taup1] * 0.5 * dzw[-1] / dt_tke,
         0.
     )
-    tke[2:-2, 2:-2, -1, taup1] = np.maximum(0., tke[2:-2, 2:-2, -1, taup1])
+    tke[2:-2, 2:-2, -1, taup1] = cp.maximum(0., tke[2:-2, 2:-2, -1, taup1])
 
     """
     add tendency due to lateral diffusion
