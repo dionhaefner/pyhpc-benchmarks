@@ -61,6 +61,7 @@ def get_callable(backend, size, device='cpu'):
 
 __implementations__ = (
     'bohrium',
+    'cupy',
     'numba',
     'numpy',
     'mxnet',
