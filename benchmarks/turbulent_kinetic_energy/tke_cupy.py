@@ -38,7 +38,7 @@ def solve_tridiag(a, b, c, d):
         b[i] += -w * c[i - 1]
         d[i] += -w * d[i - 1]
 
-    out = cp.empty(a.shape, dtype=a.dtype, ctx=a.context)
+    out = cp.empty_like(a)
     out[-1] = d[-1] / b[-1]
 
     for i in range(n - 2, -1, -1):
