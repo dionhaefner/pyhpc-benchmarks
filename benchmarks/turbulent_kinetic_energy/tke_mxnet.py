@@ -35,8 +35,8 @@ def solve_tridiag(a, b, c, d):
 
     for i in range(1, n):
         w = a[..., i] / b[..., i - 1]
-        b[i] += -w * c[..., i - 1]
-        d[i] += -w * d[..., i - 1]
+        b[..., i] += -w * c[..., i - 1]
+        d[..., i] += -w * d[..., i - 1]
 
     out = np.empty(a.shape, dtype=a.dtype, ctx=a.context)
     out[..., -1] = d[..., -1] / b[..., -1]
