@@ -234,6 +234,6 @@ def prepare_inputs(*inputs, device):
 
 
 def run(*inputs, device='cpu'):
-    integrate_tke(*inputs)
+    outputs = integrate_tke(*inputs)
     cp.cuda.stream.get_current_stream().synchronize()
-    return inputs[-7:]
+    return outputs
