@@ -1,9 +1,16 @@
+import numpy as onp
 from mxnet import np, npx
 
 
 def where(mask, a, b):
-    mask = mask.astype('uint8')
-    return a * mask + b * (1 - mask)
+    # MXNet does not support np.where with scalars
+    if onp.isscalar(a):
+        a = np.array([a], dtype='float64', ctx=mask.context)
+
+    if onp.isscalar(b):
+        b = np.array([b], dtype='float64', ctx=mask.context)
+
+    return np.where(mask, a, b)
 
 
 def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):
