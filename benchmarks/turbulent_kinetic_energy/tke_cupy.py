@@ -31,18 +31,18 @@ def solve_tridiag(a, b, c, d):
     """
     assert a.shape == b.shape and a.shape == c.shape and a.shape == d.shape
 
-    n = a.shape[0]
+    n = a.shape[-1]
 
     for i in range(1, n):
-        w = a[i] / b[i - 1]
-        b[i] += -w * c[i - 1]
-        d[i] += -w * d[i - 1]
+        w = a[..., i] / b[..., i - 1]
+        b[..., i] += -w * c[..., i - 1]
+        d[..., i] += -w * d[..., i - 1]
 
     out = cp.empty_like(a)
-    out[-1] = d[-1] / b[-1]
+    out[..., -1] = d[..., -1] / b[..., -1]
 
     for i in range(n - 2, -1, -1):
-        out[i] = (d[i] - c[i] * out[i + 1]) / b[i]
+        out[..., i] = (d[..., i] - c[..., i] * out[..., i + 1]) / b[..., i]
 
     return out
 
