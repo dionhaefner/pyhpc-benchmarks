@@ -7,7 +7,6 @@ def where(mask, a, b):
     return np.where(mask, a, b)
 
 
-@jax.jit
 def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):
     land_mask = (ks >= 0)[:, :, np.newaxis]
     edge_mask = land_mask & (np.arange(a.shape[2])[np.newaxis, np.newaxis, :]
@@ -26,6 +25,7 @@ def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):
 
     return solve_tridiag(a_tri, b_tri, c_tri, d_tri), water_mask
 
+solve_implicit = jax.jit(solve_implicit, static_argnums=(0,))
 
 @jax.jit
 def solve_tridiag(a, b, c, d):
@@ -109,7 +109,7 @@ def _adv_superbee(vel, var, mask, dx, axis, cost, cosu, dt_tracer):
     return velfac * vel[s] * (var[sp1] + var[s]) * 0.5 - np.abs(velfac * vel[s]) * ((1. - cr) + uCFL * cr) * rj * 0.5
 
 
-_adv_superbee = jax.jit(_adv_superbee, static_argnums=(4,))
+_adv_superbee = jax.jit(_adv_superbee, static_argnums=(4, 5, 6, 7))
 
 
 @jax.jit
@@ -155,7 +155,6 @@ def adv_flux_superbee_wgrid(var, u_wgrid, v_wgrid, w_wgrid, maskW, dxt, dyt, dzw
     return adv_fe, adv_fn, adv_ft
 
 
-@jax.jit
 def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, kbot, kappaM, mxl, forc, forc_tke_surface, tke, dtke):
     tau = 0
     taup1 = 1
@@ -315,6 +314,9 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     )
 
     return tke, dtke, tke_surf_corr
+
+
+integrate_tke = jax.jit(integrate_tke, static_argnums=tuple(range(3, 15)))
 
 
 def prepare_inputs(*inputs, device):

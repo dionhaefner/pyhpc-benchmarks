@@ -145,13 +145,18 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
         label=f'Running {len(all_runs)} benchmarks...', length=len(runs)
     )
 
+    callables = {}
+
     try:
         with pbar:
             for (b, size) in all_runs:
+                if (b, size) not in callables:
+                    with setup_functions[b](device=device):
+                        callables[(b, size)] = bm_module.get_callable(b, size, device=device)
+
                 with setup_functions[b](device=device):
-                    run = bm_module.get_callable(b, size, device=device)
                     with Timer() as t:
-                        res = run()
+                        res = callables[(b, size)]()
 
                 # YOWO (you only warn once)
                 if not checked[(b, size)]:
