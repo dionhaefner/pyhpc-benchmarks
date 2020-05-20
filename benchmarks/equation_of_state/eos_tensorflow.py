@@ -178,7 +178,7 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-gsw_dHdT_tf = tf.function(gsw_dHdT)
+gsw_dHdT_tf = tf.function(gsw_dHdT, experimental_compile=True)
 
 
 def prepare_inputs(sa, ct, p, device):
