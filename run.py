@@ -28,7 +28,7 @@ DEFAULT_SIZE = tuple(2 ** i for i in range(12, 23, 2))
     default=DEFAULT_SIZE,
     show_default=True,
     type=click.INT,
-    help=f'Run benchmark for this array size (repeatable)',
+    help='Run benchmark for this array size (repeatable)',
 )
 @click.option(
     '-b', '--backend',

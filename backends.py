@@ -43,32 +43,32 @@ class BackendNotSupported(Exception):
 
 
 class SetupContext:
-        def __init__(self, f):
-            self._f = f
-            self._f_args = (tuple(), dict())
+    def __init__(self, f):
+        self._f = f
+        self._f_args = (tuple(), dict())
 
-        def __call__(self, *args, **kwargs):
-            self._f_args = (args, kwargs)
-            return self
+    def __call__(self, *args, **kwargs):
+        self._f_args = (args, kwargs)
+        return self
 
-        def __enter__(self):
-            self._env = os.environ.copy()
-            args, kwargs = self._f_args
-            self._f_iter = iter(self._f(*args, **kwargs))
+    def __enter__(self):
+        self._env = os.environ.copy()
+        args, kwargs = self._f_args
+        self._f_iter = iter(self._f(*args, **kwargs))
 
-            try:
-                next(self._f_iter)
-            except Exception as e:
-                raise BackendNotSupported(str(e)) from None
+        try:
+            next(self._f_iter)
+        except Exception as e:
+            raise BackendNotSupported(str(e)) from None
 
-            return self
+        return self
 
-        def __exit__(self, *args, **kwargs):
-            try:
-                next(self._f_iter)
-            except StopIteration:
-                pass
-            os.environ = self._env
+    def __exit__(self, *args, **kwargs):
+        try:
+            next(self._f_iter)
+        except StopIteration:
+            pass
+        os.environ = self._env
 
 
 setup_function = SetupContext
