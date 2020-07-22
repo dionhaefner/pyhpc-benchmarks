@@ -35,7 +35,7 @@ BACKEND_COLORS = {
 
 def plot_results(records, benchmark, platform, outfile, plot_delta=False):
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4), dpi=75)
+    fig, ax = plt.subplots(1, 1, figsize=(5.5, 4), dpi=75)
 
     this_record = records[(benchmark, platform)]
     last_coords = {}
