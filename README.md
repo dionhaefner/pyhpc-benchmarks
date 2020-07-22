@@ -160,6 +160,25 @@ $ for backend in bohrium jax cupy pytorch tensorflow; do
 
 ## Example results
 
+### Summary
+
+#### Equation of state
+
+![results/magni-plots/bench-equation_of_state-CPU.png?raw=true](Equation of state on CPU)
+![results/magni-plots/bench-equation_of_state-GPU.png?raw=true](Equation of state on GPU)
+
+#### Isoneutral mixing
+
+![results/magni-plots/bench-isoneutral_mixing-CPU.png?raw=true](Isoneutral mixing on CPU)
+![results/magni-plots/bench-isoneutral_mixing-GPU.png?raw=true](Isoneutral mixing on GPU)
+
+#### Turbulent kinetic energy
+
+![results/magni-plots/bench-turbulent_kinetic_energy-CPU.png?raw=true](Turbulent kinetic energy on CPU)
+![results/magni-plots/bench-turbulent_kinetic_energy-GPU.png?raw=true](Turbulent kinetic energy on GPU)
+
+### Full reports
+
 - [Example results on bare metal with Tesla P100 GPU](/results/magni.md) (more reliable)
 - [Example results on Google Colab](/results/colab.md) (easier to reproduce)
 
