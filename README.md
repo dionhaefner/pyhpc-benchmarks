@@ -191,7 +191,7 @@ Lessons I learned by assembling these benchmarks: (your mileage may vary)
 - Numba is a great choice on CPU if you don't mind writing explicit for loops (which can be more readable than a vectorized implementation), being slightly faster than Jax with little effort.
 - If you have embarrasingly parallel workloads, speedups of > 1000x are easy to achieve on high-end GPUs.
 - Tensorflow is not great for applications like ours, since it lacks tools to apply partial updates to tensors (in the sense of `tensor[2:-2] = 0.`).
-- Don't bother using Pytorch or Tensorflow on CPU (you won't get much faster than NumPy).
+- Don't bother using Pytorch or vanilla Tensorflow on CPU (you won't get much faster than NumPy). Tensorflow with XLA (`experimental_compile`) is great though!
 - CuPy is nice! Often you don't need to change anything in your NumPy code to have it run on GPU (with decent, but not outstanding performance).
 - Reaching Fortran performance on CPU with vectorized implementations is hard :)
 
