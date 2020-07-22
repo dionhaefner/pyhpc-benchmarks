@@ -4,7 +4,7 @@ channels:
   - defaults
   - pytorch
 dependencies:
-  - python==3.7
+  - python<3.8,>3.6
   - pip
   - numpy
   - pytorch
@@ -14,9 +14,9 @@ dependencies:
   - click
   - scipy
   - cudnn
-  - cuda101
+  - cudatoolkit<10.2,>10.0
+  - cupy
   - pip:
     - bohrium
-    - cupy-cuda101
-    - https://storage.googleapis.com/jax-releases/cuda101/jaxlib-0.1.31-cp37-none-linux_x86_64.whl
+    - https://storage.googleapis.com/jax-releases/cuda101/jaxlib-0.1.51-cp37-none-manylinux2010_x86_64.whl
     - jax
