@@ -15,7 +15,7 @@ def generate_inputs(size):
 
     s = np.random.uniform(1e-2, 10, size=shape)
     t = np.random.uniform(-12, 20, size=shape)
-    p = np.random.uniform(0, 1000, size=(1, 1, shape[-1]))
+    p = np.random.uniform(0, 1000, size=shape)#(1, 1, shape[-1]))
     return s, t, p
 
 
@@ -38,6 +38,7 @@ __implementations__ = (
     'bohrium',
     'cupy',
     'jax',
+    'legate',
     'numba',
     'numpy',
     'pytorch',
