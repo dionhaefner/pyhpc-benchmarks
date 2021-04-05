@@ -69,14 +69,14 @@ As a rule of thumb (from our experience with Veros), the performance of a Fortra
 For CPU:
 
 ```bash
-$ conda create -f environment_cpu.yml
+$ conda create -f environment-cpu.yml
 $ conda activate pyhpc-bench-cpu
 ```
 
 GPU:
 
 ```bash
-$ conda create -f environment_gpu.yml
+$ conda create -f environment-gpu.yml
 $ conda activate pyhpc-bench-gpu
 ```
 
@@ -195,3 +195,22 @@ Lessons I learned by assembling these benchmarks: (your mileage may vary)
 ## Contributing
 
 Community contributions are encouraged! Whether you want to donate another benchmark, share your experience, optimize an implementation, or suggest another backend - [feel free to ask](https://github.com/dionhaefner/pyhpc-benchmarks/issues) or [open a PR](https://github.com/dionhaefner/pyhpc-benchmarks/pulls).
+
+### Adding a new backend
+
+Adding a new backend is easy!
+
+Let's assume that you want to add support for a library called `speedygonzales`. All you need to do is:
+
+- Implement a benchmark to use your library, e.g. `benchmarks/equation_of_state/eos_speedygonzales.py`.
+- Register the benchmark in the respective `__init__.py` file, by adding `speedygonzales` to its `__implementations__` tuple.
+- Register the backend, by adding its setup function to the `__backends__` dict in `backends.py`.
+
+   A setup function is what is called before every call to your benchmark, and can be used for custom setup and teardown. In the simplest case, it is just
+
+   ```python
+   def setup_speedygonzales(device='cpu'):
+       # code to run before benchmark
+       yield
+       # code to run after benchmark
+   ```
