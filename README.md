@@ -200,11 +200,11 @@ Community contributions are encouraged! Whether you want to donate another bench
 
 Adding a new backend is easy!
 
-Let's assume that you want to add support for a library called `speedygonzales`. All you need to do is:
+Let's assume that you want to add support for a library called `speedygonzales`. All you need to do is this:
 
 - Implement a benchmark to use your library, e.g. `benchmarks/equation_of_state/eos_speedygonzales.py`.
-- Register the benchmark in the respective `__init__.py` file, by adding `speedygonzales` to its `__implementations__` tuple.
-- Register the backend, by adding its setup function to the `__backends__` dict in `backends.py`.
+- Register the benchmark in the respective `__init__.py` file (`benchmarks/equation_of_state/__init__.py`), by adding `"speedygonzales"` to its `__implementations__` tuple.
+- Register the backend, by adding its setup function to the `__backends__` dict in [`backends.py`](https://github.com/dionhaefner/pyhpc-benchmarks/blob/master/backends.py).
 
    A setup function is what is called before every call to your benchmark, and can be used for custom setup and teardown. In the simplest case, it is just
 
@@ -214,3 +214,9 @@ Let's assume that you want to add support for a library called `speedygonzales`.
        yield
        # code to run after benchmark
    ```
+
+Then, you can run the benchmark with your new backend:
+
+```bash
+$ python run.py benchmarks/equation_of_state -b speedygonzales
+```
