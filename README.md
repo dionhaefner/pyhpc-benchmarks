@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/212333820.svg)](https://zenodo.org/badge/latestdoi/212333820)
+
 # HPC benchmarks for Python
 
 This is a suite of benchmarks to test the *sequential CPU* and GPU performance of various computational backends with Python frontends.
