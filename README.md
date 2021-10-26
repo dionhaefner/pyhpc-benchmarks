@@ -71,14 +71,14 @@ As a rule of thumb (from our experience with Veros), the performance of a Fortra
 For CPU:
 
 ```bash
-$ conda create -f environment-cpu.yml
+$ conda env create -f environment-cpu.yml
 $ conda activate pyhpc-bench-cpu
 ```
 
 GPU:
 
 ```bash
-$ conda create -f environment-gpu.yml
+$ conda env create -f environment-gpu.yml
 $ conda activate pyhpc-bench-gpu
 ```
 
