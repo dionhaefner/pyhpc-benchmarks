@@ -5,7 +5,7 @@ import itertools
 
 import click
 
-from backends import __backends__ as setup_functions, BackendNotSupported, convert_to_numpy
+from backends import __backends__ as setup_functions, BackendNotSupported, convert_to_numpy, check_backend_conflicts
 from utilities import (
     Timer, estimate_repetitions, format_output, compute_statistics,
     get_benchmark_module, check_consistency
@@ -114,6 +114,8 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
                 err=True
             )
             backend.remove(b)
+
+    check_backend_conflicts(backend, device)
 
     runs = sorted(itertools.product(backend, size))
 

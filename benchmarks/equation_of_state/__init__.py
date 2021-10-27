@@ -36,7 +36,6 @@ def get_callable(backend, size, device='cpu'):
 
 __implementations__ = (
     'aesara',
-    'bohrium',
     'cupy',
     'jax',
     'numba',

@@ -1,21 +1,7 @@
 import torch
 
 
-def solve_implicit(ks, a, b, c, d, b_edge):
-    land_mask = (ks >= 0)[:, :, None]
-    edge_mask = land_mask & (torch.arange(a.shape[2])[None, None, :]
-                             == ks[:, :, None])
-    water_mask = land_mask & (torch.arange(a.shape[2])[None, None, :]
-                              >= ks[:, :, None])
-
-    a_tri = water_mask * a * torch.logical_not(edge_mask)
-    b_tri = torch.where(water_mask, b, 1.)
-    b_tri = torch.where(edge_mask, b_edge, b_tri)
-    c_tri = water_mask * c
-    d_tri = water_mask * d
-    return solve_tridiag(a_tri, b_tri, c_tri, d_tri), water_mask
-
-
+@torch.jit.script
 def solve_tridiag(a, b, c, d):
     """
     Solves a tridiagonal matrix system with diagonals a, b, c and RHS vector d.
@@ -38,6 +24,23 @@ def solve_tridiag(a, b, c, d):
     return out
 
 
+@torch.jit.script
+def solve_implicit(ks, a, b, c, d, b_edge):
+    land_mask = (ks >= 0)[:, :, None]
+    edge_mask = land_mask & (torch.arange(a.shape[2])[None, None, :]
+                             == ks[:, :, None])
+    water_mask = land_mask & (torch.arange(a.shape[2])[None, None, :]
+                              >= ks[:, :, None])
+
+    a_tri = water_mask * a * torch.logical_not(edge_mask)
+    b_tri = torch.where(water_mask, b, 1.)
+    b_tri = torch.where(edge_mask, b_edge, b_tri)
+    c_tri = water_mask * c
+    d_tri = water_mask * d
+    return solve_tridiag(a_tri, b_tri, c_tri, d_tri), water_mask
+
+
+@torch.jit.script
 def _calc_cr(rjp, rj, rjm, vel):
     """
     Calculates cr value used in superbee advection scheme
@@ -46,6 +49,7 @@ def _calc_cr(rjp, rj, rjm, vel):
     return torch.where(vel > 0., rjm, rjp) / torch.where(torch.abs(rj) < eps, eps, rj)
 
 
+@torch.jit.script
 def pad_z_edges(arr):
     arr_shape = list(arr.shape)
     arr_shape[2] += 2
@@ -54,10 +58,12 @@ def pad_z_edges(arr):
     return out
 
 
+@torch.jit.script
 def limiter(cr):
     return torch.maximum(torch.tensor([0.]), torch.maximum(torch.minimum(torch.tensor([1.]), 2 * cr), torch.minimum(torch.tensor([2.]), cr)))
 
 
+@torch.jit.script
 def _adv_superbee(vel, var, mask, dx, axis: int, cost, cosu, dt_tracer: float):
     if axis == 0:
         dx = cost[None, 2:-2, None] * dx[1:-2, None, None]
@@ -90,6 +96,7 @@ def _adv_superbee(vel, var, mask, dx, axis: int, cost, cosu, dt_tracer: float):
         raise ValueError('axis must be 0, 1, or 2')
 
 
+@torch.jit.script
 def adv_flux_superbee_wgrid(adv_fe, adv_fn, adv_ft, var, u_wgrid, v_wgrid, w_wgrid, maskW, dxt, dyt, dzw, cost, cosu, dt_tracer: float):
     """
     Calculates advection of a tracer defined on Wgrid

@@ -42,6 +42,13 @@ class BackendNotSupported(Exception):
     pass
 
 
+def check_backend_conflicts(backends, device):
+    if device == 'gpu':
+        gpu_backends = set(backends) - {'numba', 'numpy', 'aesara'}
+        if len(gpu_backends) > 1:
+            raise RuntimeError("can only use 1 GPU backend at the same time")
+
+
 class SetupContext:
     def __init__(self, f):
         self._f = f
@@ -104,9 +111,8 @@ def setup_aesara(device='cpu'):
         OMP_NUM_THREADS='1',
     )
     if device == 'gpu':
-        os.environ.update(
-            AESARA_FLAGS='device=cuda',
-        )
+        raise RuntimeError('aesara uses JAX on GPU')
+
     import aesara  # noqa: F401
     # clang needs this, aesara#127
     aesara.config.gcc__cxxflags = "-Wno-c++11-narrowing"
@@ -138,7 +144,6 @@ def setup_jax(device='cpu'):
             'intra_op_parallelism_threads=1 '
             'inter_op_parallelism_threads=1 '
         ),
-        XLA_PYTHON_CLIENT_PREALLOCATE='false',
     )
 
     if device in ('cpu', 'gpu'):
@@ -177,7 +182,6 @@ def setup_pytorch(device='cpu'):
 def setup_tensorflow(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
-        XLA_PYTHON_CLIENT_PREALLOCATE='false',
     )
     import tensorflow as tf
     tf.config.threading.set_inter_op_parallelism_threads(1)

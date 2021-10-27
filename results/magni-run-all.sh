@@ -2,13 +2,11 @@
 
 set -e
 
-ml load bohrium
-ml unload python
-conda activate bench-2020
+ml load nvtoolkit
+conda activate pyhpc-bench-gpu
 conda list
 
-export BH_CONFIG=$HOME/.bohrium/config.ini
-export XLA_FLAGS="--xla_gpu_cuda_data_dir=/groups/ocean/software/software/nvtoolkit/cuda-10.1"
+export XLA_FLAGS="--xla_gpu_cuda_data_dir=/groups/ocean/software/software_gcc2020/nvtoolkit/11.2.2"
 
 cd `git rev-parse --show-toplevel`
 
@@ -23,4 +21,3 @@ for backend in bohrium cupy jax pytorch theano; do CUDA_VISIBLE_DEVICES="0" pyth
 CUDA_VISIBLE_DEVICES="" taskset -c 23 python run.py benchmarks/turbulent_kinetic_energy/ --device cpu
 CUDA_VISIBLE_DEVICES="" taskset -c 23 python run.py benchmarks/turbulent_kinetic_energy/ --device cpu -s 16777216
 for backend in bohrium jax; do CUDA_VISIBLE_DEVICES="0" python run.py benchmarks/turbulent_kinetic_energy/ --device gpu -b $backend -b numpy; done
-

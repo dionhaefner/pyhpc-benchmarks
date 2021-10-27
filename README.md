@@ -49,8 +49,7 @@ Two reasons:
 - [Jax](https://github.com/google/jax)
 - [Tensorflow](https://www.tensorflow.org)
 - [Pytorch](https://pytorch.org)
-- [Theano](http://deeplearning.net/software/theano/)
-- [Bohrium](http://www.bh107.org)
+- [Aesara](https://github.com/aesara-devs/aesara)
 - [CuPy](https://cupy.chainer.org/) (GPU only)
 
 (not every backend is available for every benchmark)

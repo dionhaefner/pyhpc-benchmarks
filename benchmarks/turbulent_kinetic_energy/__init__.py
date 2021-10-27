@@ -60,7 +60,6 @@ def get_callable(backend, size, device='cpu'):
 
 
 __implementations__ = (
-    'bohrium',
     'jax',
     'numba',
     'numpy',
