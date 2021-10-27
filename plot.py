@@ -6,64 +6,77 @@ from collections import defaultdict
 
 import click
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 
 # stupid regex matching ahead
-RE_RESULT = re.compile(r''.join([
-    r'\s*',
-    r'(?P<size>(?:\d|,)+)\s*',
-    r'(?P<backend>\w+)\s*',
-    *(
-        rf'(?P<{name}>(?:\d|\.|,)+)\s*' for name in
-        ('calls', 'mean', 'stdev', 'min', 'p25', 'median', 'p75', 'max', 'delta')
-    ),
-]))
-RE_BENCHMARK = re.compile(r'benchmarks\.(?P<name>\w+)')
-RE_PLATFORM = re.compile(r'Running on (?P<platform>\w+)')
+RE_RESULT = re.compile(
+    r"".join(
+        [
+            r"\s*",
+            r"(?P<size>(?:\d|,)+)\s*",
+            r"(?P<backend>\w+)\s*",
+            *(
+                rf"(?P<{name}>(?:\d|\.|,)+)\s*"
+                for name in (
+                    "calls",
+                    "mean",
+                    "stdev",
+                    "min",
+                    "p25",
+                    "median",
+                    "p75",
+                    "max",
+                    "delta",
+                )
+            ),
+        ]
+    )
+)
+RE_BENCHMARK = re.compile(r"benchmarks\.(?P<name>\w+)")
+RE_PLATFORM = re.compile(r"Running on (?P<platform>\w+)")
 
 BACKEND_COLORS = {
-    'numpy': 'C0',
-    'aesara': 'C1',
-    'cupy': 'C2',
-    'jax': 'C3',
-    'numba': 'C4',
-    'pytorch': 'C5',
-    'tensorflow': 'C6',
+    "numpy": "C0",
+    "aesara": "C1",
+    "cupy": "C2",
+    "jax": "C3",
+    "numba": "C4",
+    "pytorch": "C5",
+    "tensorflow": "C6",
 }
 
 
 def plot_results(records, benchmark, platform, outfile, plot_delta=False):
     import matplotlib.pyplot as plt
+
     fig, ax = plt.subplots(1, 1, figsize=(5.5, 4), dpi=75)
 
     this_record = records[(benchmark, platform)]
     last_coords = {}
 
     for backend, backend_values in this_record.items():
-        x = backend_values['size']
+        x = backend_values["size"]
         if plot_delta:
-            y = backend_values['delta']
-            ylabel = 'Relative speedup'
+            y = backend_values["delta"]
+            ylabel = "Relative speedup"
         else:
-            y = backend_values['mean']
-            ylabel = 'Mean runtime (s)'
+            y = backend_values["mean"]
+            ylabel = "Mean runtime (s)"
 
         x, y = zip(*sorted(zip(x, y), key=lambda ix: ix[0]))
 
-        plt.plot(
-            x, y, 'o--', label=backend,
-            color=BACKEND_COLORS[backend]
-        )
+        plt.plot(x, y, "o--", label=backend, color=BACKEND_COLORS[backend])
         last_coords[backend] = (x[-1], y[-1])
 
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
 
-        plt.xlabel('Problem size (# elements)')
+        plt.xlabel("Problem size (# elements)")
         plt.ylabel(ylabel)
 
-        plt.xscale('log')
-        plt.yscale('log')
+        plt.xscale("log")
+        plt.yscale("log")
 
     plt.title(f'Benchmark "{benchmark}" on {platform.upper()}')
     fig.canvas.draw()
@@ -77,8 +90,13 @@ def plot_results(records, benchmark, platform, outfile, plot_delta=False):
         _, y = trans.inverted().transform((0, tp))
 
         plt.annotate(
-            backend, (x, y), xytext=(10, 0), textcoords='offset points',
-            annotation_clip=False, color=BACKEND_COLORS[backend], va='center'
+            backend,
+            (x, y),
+            xytext=(10, 0),
+            textcoords="offset points",
+            annotation_clip=False,
+            color=BACKEND_COLORS[backend],
+            va="center",
         )
 
         last_text_pos = tp
@@ -89,18 +107,22 @@ def plot_results(records, benchmark, platform, outfile, plot_delta=False):
 
 
 def _parse_int(string):
-    return int(string.replace(',', '_'))
+    return int(string.replace(",", "_"))
 
 
-@click.command('plot')
-@click.argument('INFILE', type=click.File('r'))
+@click.command("plot")
+@click.argument("INFILE", type=click.File("r"))
 @click.option(
-    '-o', '--outdir', required=True, type=click.Path(file_okay=False, writable=True),
-    help='Output directory for plots'
+    "-o",
+    "--outdir",
+    required=True,
+    type=click.Path(file_okay=False, writable=True),
+    help="Output directory for plots",
 )
 @click.option(
-    '--plot-delta', is_flag=True,
-    help='Plot relative speedup instead of absolute runtime'
+    "--plot-delta",
+    is_flag=True,
+    help="Plot relative speedup instead of absolute runtime",
 )
 def main(infile, outdir, plot_delta):
     """Read a benchmark report from file or stdin and plot the results
@@ -117,12 +139,12 @@ def main(infile, outdir, plot_delta):
     for line in infile:
         bench_match = RE_BENCHMARK.match(line)
         if bench_match:
-            current_benchmark = bench_match.group('name')
+            current_benchmark = bench_match.group("name")
             continue
 
         platform_match = RE_PLATFORM.match(line)
         if platform_match:
-            current_platform = platform_match.group('platform')
+            current_platform = platform_match.group("platform")
             continue
 
         result_match = RE_RESULT.match(line)
@@ -130,7 +152,7 @@ def main(infile, outdir, plot_delta):
             continue
 
         result_line = result_match.groupdict()
-        backend = result_line['backend']
+        backend = result_line["backend"]
 
         key = (current_benchmark, current_platform)
         if key not in records:
@@ -141,18 +163,27 @@ def main(infile, outdir, plot_delta):
 
         record = records[key][backend]
 
-        if _parse_int(result_line['size']) in record['size']:
+        if _parse_int(result_line["size"]) in record["size"]:
             click.echo(
-                f'Warning: duplicate entry for benchmark {current_benchmark} '
+                f"Warning: duplicate entry for benchmark {current_benchmark} "
                 f'on {current_platform}, backend {backend}, size {result_line["size"]} '
-                '- skipping'
+                "- skipping"
             )
             continue
 
         for rkey, rval in result_line.items():
-            if rkey in ('calls', 'size'):
+            if rkey in ("calls", "size"):
                 rval = _parse_int(rval)
-            elif rkey in ('mean', 'stdev', 'min', 'p25', 'median', 'p75', 'max', 'delta'):
+            elif rkey in (
+                "mean",
+                "stdev",
+                "min",
+                "p25",
+                "median",
+                "p75",
+                "max",
+                "delta",
+            ):
                 rval = float(rval)
 
             record[rkey].append(rval)
@@ -160,10 +191,10 @@ def main(infile, outdir, plot_delta):
     os.makedirs(outdir, exist_ok=True)
 
     for benchmark, platform in records.keys():
-        outfile = os.path.join(outdir, f'bench-{benchmark}-{platform}.png')
+        outfile = os.path.join(outdir, f"bench-{benchmark}-{platform}.png")
         plot_results(records, benchmark, platform, outfile, plot_delta)
-        click.echo(f'Wrote {outfile}')
+        click.echo(f"Wrote {outfile}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
