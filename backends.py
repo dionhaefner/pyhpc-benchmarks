@@ -1,5 +1,4 @@
 import os
-import importlib
 
 import numpy
 
@@ -13,9 +12,6 @@ def convert_to_numpy(arr, backend, device='cpu'):
         # this is stricter than isinstance,
         # we don't want subclasses to get passed through
         return arr
-
-    if backend == 'bohrium':
-        return arr.copy2numpy()
 
     if backend == 'cupy':
         return arr.get()
@@ -89,20 +85,6 @@ def setup_numpy(device='cpu'):
         OMP_NUM_THREADS='1',
     )
     yield
-
-
-@setup_function
-def setup_bohrium(device='cpu'):
-    os.environ.update(
-        OMP_NUM_THREADS='1',
-        BH_STACK='opencl' if device == 'gpu' else 'openmp',
-    )
-    try:
-        import bohrium  # noqa: F401
-        yield
-    finally:
-        # bohrium does things to numpy
-        importlib.reload(numpy)
 
 
 @setup_function
@@ -197,7 +179,6 @@ def setup_tensorflow(device='cpu'):
 
 __backends__ = {
     'numpy': setup_numpy,
-    'bohrium': setup_bohrium,
     'cupy': setup_cupy,
     'jax': setup_jax,
     'aesara': setup_aesara,

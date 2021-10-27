@@ -23,13 +23,12 @@ RE_PLATFORM = re.compile(r'Running on (?P<platform>\w+)')
 
 BACKEND_COLORS = {
     'numpy': 'C0',
-    'bohrium': 'C1',
+    'aesara': 'C1',
     'cupy': 'C2',
     'jax': 'C3',
     'numba': 'C4',
     'pytorch': 'C5',
     'tensorflow': 'C6',
-    'theano': 'C7',
 }
 
 
