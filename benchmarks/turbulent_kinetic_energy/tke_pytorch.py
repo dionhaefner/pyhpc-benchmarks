@@ -1,6 +1,21 @@
 import torch
 
 
+def solve_implicit(ks, a, b, c, d, b_edge):
+    land_mask = (ks >= 0)[:, :, None]
+    edge_mask = land_mask & (torch.arange(a.shape[2])[None, None, :]
+                             == ks[:, :, None])
+    water_mask = land_mask & (torch.arange(a.shape[2])[None, None, :]
+                              >= ks[:, :, None])
+
+    a_tri = water_mask * a * torch.logical_not(edge_mask)
+    b_tri = torch.where(water_mask, b, 1.)
+    b_tri = torch.where(edge_mask, b_edge, b_tri)
+    c_tri = water_mask * c
+    d_tri = water_mask * d
+    return solve_tridiag(a_tri, b_tri, c_tri, d_tri), water_mask
+
+
 def solve_tridiag(a, b, c, d):
     """
     Solves a tridiagonal matrix system with diagonals a, b, c and RHS vector d.
@@ -34,42 +49,48 @@ def _calc_cr(rjp, rj, rjm, vel):
 def pad_z_edges(arr):
     arr_shape = list(arr.shape)
     arr_shape[2] += 2
-    out = torch.zeros(arr_shape, arr.dtype)
+    out = torch.zeros(arr_shape, dtype=arr.dtype)
     out[:, :, 1:-1] = arr
     return out
 
 
 def limiter(cr):
-    return torch.maximum(0., torch.maximum(torch.minimum(1., 2 * cr), torch.minimum(2., cr)))
+    return torch.maximum(torch.tensor([0.]), torch.maximum(torch.minimum(torch.tensor([1.]), 2 * cr), torch.minimum(torch.tensor([2.]), cr)))
 
 
-def _adv_superbee(vel, var, mask, dx, axis, cost, cosu, dt_tracer):
-    velfac = 1
+def _adv_superbee(vel, var, mask, dx, axis: int, cost, cosu, dt_tracer: float):
     if axis == 0:
-        sm1, s, sp1, sp2 = ((slice(1 + n, -2 + n or None), slice(2, -2), slice(None))
-                            for n in range(-1, 3))
         dx = cost[None, 2:-2, None] * dx[1:-2, None, None]
+        uCFL = torch.abs(vel[1:-2, 2:-2, :] * dt_tracer / dx)
+        rjp = (var[3:, 2:-2, :] - var[2:-1, 2:-2, :]) * mask[2:-1, 2:-2, :]
+        rj = (var[2:-1, 2:-2, :] - var[1:-2, 2:-2, :]) * mask[1:-2, 2:-2, :]
+        rjm = (var[1:-2, 2:-2, :] - var[:-3, 2:-2, :]) * mask[:-3, 2:-2, :]
+        cr = limiter(_calc_cr(rjp, rj, rjm, vel[1:-2, 2:-2, :]))
+        return vel[1:-2, 2:-2, :] * (var[2:-1, 2:-2, :] + var[1:-2, 2:-2, :]) * 0.5 - torch.abs(vel[1:-2, 2:-2, :]) * ((1. - cr) + uCFL * cr) * rj * 0.5
+
     elif axis == 1:
-        sm1, s, sp1, sp2 = ((slice(2, -2), slice(1 + n, -2 + n or None), slice(None))
-                            for n in range(-1, 3))
         dx = (cost * dx)[None, 1:-2, None]
         velfac = cosu[None, 1:-2, None]
+        uCFL = torch.abs(velfac * vel[2:-2, 1:-2, :] * dt_tracer / dx)
+        rjp = (var[2:-2, 3:, :] - var[2:-2, 2:-1, :]) * mask[2:-2, 2:-1, :]
+        rj = (var[2:-2, 2:-1, :] - var[2:-2, 1:-2, :]) * mask[2:-2, 1:-2, :]
+        rjm = (var[2:-2, 1:-2, :] - var[2:-2, :-3, :]) * mask[2:-2, :-3, :]
+        cr = limiter(_calc_cr(rjp, rj, rjm, vel[2:-2, 1:-2, :]))
+        return velfac * vel[2:-2, 1:-2, :] * (var[2:-2, 2:-1, :] + var[2:-2, 1:-2, :]) * 0.5 - torch.abs(velfac * vel[2:-2, 1:-2, :]) * ((1. - cr) + uCFL * cr) * rj * 0.5
     elif axis == 2:
-        vel, var, mask = (pad_z_edges(a) for a in (vel, var, mask))
-        sm1, s, sp1, sp2 = ((slice(2, -2), slice(2, -2), slice(1 + n, -2 + n or None))
-                            for n in range(-1, 3))
+        vel, var, mask = [pad_z_edges(a) for a in (vel, var, mask)]
         dx = dx[None, None, :-1]
+        uCFL = torch.abs(vel[2:-2, 2:-2, 1:-2] * dt_tracer / dx)
+        rjp = (var[2:-2, 2:-2, 3:] - var[2:-2, 2:-2, 2:-1]) * mask[2:-2, 2:-2, 2:-1]
+        rj = (var[2:-2, 2:-2, 2:-1] - var[2:-2, 2:-2, 1:-2]) * mask[2:-2, 2:-2, 1:-2]
+        rjm = (var[2:-2, 2:-2, 1:-2] - var[2:-2, 2:-2, :-3]) * mask[2:-2, 2:-2, :-3]
+        cr = limiter(_calc_cr(rjp, rj, rjm, vel[2:-2, 2:-2, 1:-2]))
+        return vel[2:-2, 2:-2, 1:-2] * (var[2:-2, 2:-2, 2:-1] + var[2:-2, 2:-2, 1:-2]) * 0.5 - torch.abs(vel[2:-2, 2:-2, 1:-2]) * ((1. - cr) + uCFL * cr) * rj * 0.5
     else:
         raise ValueError('axis must be 0, 1, or 2')
-    uCFL = torch.abs(velfac * vel[s] * dt_tracer / dx)
-    rjp = (var[sp2] - var[sp1]) * mask[sp1]
-    rj = (var[sp1] - var[s]) * mask[s]
-    rjm = (var[s] - var[sm1]) * mask[sm1]
-    cr = limiter(_calc_cr(rjp, rj, rjm, vel[s]))
-    return velfac * vel[s] * (var[sp1] + var[s]) * 0.5 - torch.abs(velfac * vel[s]) * ((1. - cr) + uCFL * cr) * rj * 0.5
 
 
-def adv_flux_superbee_wgrid(adv_fe, adv_fn, adv_ft, var, u_wgrid, v_wgrid, w_wgrid, maskW, dxt, dyt, dzw, cost, cosu, dt_tracer):
+def adv_flux_superbee_wgrid(adv_fe, adv_fn, adv_ft, var, u_wgrid, v_wgrid, w_wgrid, maskW, dxt, dyt, dzw, cost, cosu, dt_tracer: float):
     """
     Calculates advection of a tracer defined on Wgrid
     """
@@ -95,7 +116,7 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     taup1 = 1
     taum1 = 2
 
-    dt_tracer = 1
+    dt_tracer = 1.
     dt_mom = 1
     AB_eps = 0.1
     alpha_tke = 1.
@@ -106,7 +127,7 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     flux_north = torch.zeros_like(maskU)
     flux_top = torch.zeros_like(maskU)
 
-    sqrttke = torch.sqrt(torch.maximum(0., tke[:, :, :, tau]))
+    sqrttke = torch.sqrt(torch.maximum(torch.tensor([0.]), tke[:, :, :, tau]))
 
     """
     integrate Tke equation on W grid with surface flux boundary condition
@@ -144,7 +165,7 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
     d_tri[...] = tke[2:-2, 2:-2, :, tau] + dt_tke * forc[2:-2, 2:-2, :]
     d_tri[:, :, -1] += dt_tke * forc_tke_surface[2:-2, 2:-2] / (0.5 * dzw[-1])
 
-    sol, water_mask = solve_tridiag(ks, a_tri, b_tri, c_tri, d_tri, b_edge=b_tri_edge)
+    sol, water_mask = solve_implicit(ks, a_tri, b_tri, c_tri, d_tri, b_edge=b_tri_edge)
     tke[2:-2, 2:-2, :, taup1] = torch.where(water_mask, sol, tke[2:-2, 2:-2, :, taup1])
 
     """
@@ -157,7 +178,7 @@ def integrate_tke(u, v, w, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, co
         -tke[2:-2, 2:-2, -1, taup1] * 0.5 * dzw[-1] / dt_tke,
         0.
     )
-    tke[2:-2, 2:-2, -1, taup1] = torch.maximum(0., tke[2:-2, 2:-2, -1, taup1])
+    tke[2:-2, 2:-2, -1, taup1] = torch.maximum(torch.tensor([0.]), tke[2:-2, 2:-2, -1, taup1])
 
     """
     add tendency due to lateral diffusion
