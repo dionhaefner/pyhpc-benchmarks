@@ -311,7 +311,11 @@ def isoneutral_diffusion_pre(
         jax.ops.index[2:-2, 2:-2, :-1],
         sumx / (4 * dxt[2:-2, jnp.newaxis, jnp.newaxis])
         + sumy
-        / (4 * dyt[jnp.newaxis, 2:-2, jnp.newaxis] * cost[jnp.newaxis, 2:-2, jnp.newaxis]),
+        / (
+            4
+            * dyt[jnp.newaxis, 2:-2, jnp.newaxis]
+            * cost[jnp.newaxis, 2:-2, jnp.newaxis]
+        ),
     )
     K_33 = jax.ops.index_update(K_33, jax.ops.index[2:-2, 2:-2, -1], 0.0)
 

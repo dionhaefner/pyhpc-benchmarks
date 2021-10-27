@@ -51,7 +51,7 @@ def _calc_cr(rjp, rj, rjm, vel):
 def pad_z_edges(arr):
     arr_shape = list(arr.shape)
     arr_shape[2] += 2
-    out = torch.zeros(arr_shape, dtype=arr.dtype)
+    out = torch.zeros(arr_shape, dtype=arr.dtype, device=arr.device)
     out[:, :, 1:-1] = arr
     return out
 
@@ -59,10 +59,10 @@ def pad_z_edges(arr):
 @torch.jit.script
 def limiter(cr):
     return torch.maximum(
-        torch.tensor([0.0]),
+        torch.tensor([0.0], device=cr.device),
         torch.maximum(
-            torch.minimum(torch.tensor([1.0]), 2 * cr),
-            torch.minimum(torch.tensor([2.0]), cr),
+            torch.minimum(torch.tensor([1.0], device=cr.device), 2 * cr),
+            torch.minimum(torch.tensor([2.0], device=cr.device), cr),
         ),
     )
 
@@ -198,7 +198,9 @@ def integrate_tke(
     flux_north = torch.zeros_like(maskU)
     flux_top = torch.zeros_like(maskU)
 
-    sqrttke = torch.sqrt(torch.maximum(torch.tensor([0.0]), tke[:, :, :, tau]))
+    sqrttke = torch.sqrt(
+        torch.maximum(torch.tensor([0.0], device=tke.device), tke[:, :, :, tau])
+    )
 
     """
     integrate Tke equation on W grid with surface flux boundary condition
@@ -254,13 +256,13 @@ def integrate_tke(
     """
     Add TKE if surface density flux drains TKE in uppermost box
     """
-    tke_surf_corr = torch.zeros(maskU.shape[:2])
+    tke_surf_corr = torch.zeros(maskU.shape[:2], device=maskU.device)
     mask = tke[2:-2, 2:-2, -1, taup1] < 0.0
     tke_surf_corr[2:-2, 2:-2] = torch.where(
         mask, -tke[2:-2, 2:-2, -1, taup1] * 0.5 * dzw[-1] / dt_tke, 0.0
     )
     tke[2:-2, 2:-2, -1, taup1] = torch.maximum(
-        torch.tensor([0.0]), tke[2:-2, 2:-2, -1, taup1]
+        torch.tensor([0.0], device=tke.device), tke[2:-2, 2:-2, -1, taup1]
     )
 
     """
@@ -344,6 +346,7 @@ def prepare_inputs(*inputs, device):
 def run(*inputs, device="cpu"):
     with torch.no_grad():
         outputs = integrate_tke(*inputs)
-        if device == "gpu":
-            torch.cuda.synchronize()
+    if device == "gpu":
+        torch.cuda.synchronize()
+
     return outputs
