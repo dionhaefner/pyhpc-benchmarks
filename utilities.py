@@ -24,6 +24,9 @@ def estimate_repetitions(func, args=(), target_time=10, powers_of=10):
     # call function once for warm-up
     func(*args)
 
+    # some backends need an extra nudge (looking at you, PyTorch)
+    func(*args)
+
     # call again and measure time
     with Timer() as t:
         func(*args)
