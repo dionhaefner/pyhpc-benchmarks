@@ -1,22 +1,18 @@
 name: pyhpc-bench-gpu
 channels:
   - conda-forge
-  - pytorch
   - nodefaults
 dependencies:
   - python>3.6,<3.9
   - pip
-  - numpy
-  - pytorch>=1.10
-  - tensorflow-gpu>=2.0
-  - theano
-  - numba
-  - click
-  - scipy
   - cudnn>=8.2
   - cudatoolkit>=11.1
-  - cupy
   - pip:
-    - bohrium
+    - click
+    - aesara
+    - cupy
+    - numba
+    - torch>=1.10
+    - tensorflow-gpu>=2.0
     - -f https://storage.googleapis.com/jax-releases/jax_releases.html
     - jax[cuda]
