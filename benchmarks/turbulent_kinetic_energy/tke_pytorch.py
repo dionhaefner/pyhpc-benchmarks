@@ -27,8 +27,12 @@ def solve_tridiag(a, b, c, d):
 @torch.jit.script
 def solve_implicit(ks, a, b, c, d, b_edge):
     land_mask = (ks >= 0)[:, :, None]
-    edge_mask = land_mask & (torch.arange(a.shape[2])[None, None, :] == ks[:, :, None])
-    water_mask = land_mask & (torch.arange(a.shape[2])[None, None, :] >= ks[:, :, None])
+    edge_mask = land_mask & (
+        torch.arange(a.shape[2], device=ks.device)[None, None, :] == ks[:, :, None]
+    )
+    water_mask = land_mask & (
+        torch.arange(a.shape[2], device=ks.device)[None, None, :] >= ks[:, :, None]
+    )
 
     a_tri = water_mask * a * torch.logical_not(edge_mask)
     b_tri = torch.where(water_mask, b, 1.0)
