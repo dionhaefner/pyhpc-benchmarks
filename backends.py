@@ -32,7 +32,7 @@ def convert_to_numpy(arr, backend, device='cpu'):
     if backend == 'tensorflow':
         return numpy.asarray(arr)
 
-    if backend == 'theano':
+    if backend == 'aesara':
         return numpy.asarray(arr)
 
     raise RuntimeError(f'Got unexpected array / backend combination: {type(arr)} / {backend}')
@@ -99,15 +99,17 @@ def setup_bohrium(device='cpu'):
 
 
 @setup_function
-def setup_theano(device='cpu'):
+def setup_aesara(device='cpu'):
     os.environ.update(
         OMP_NUM_THREADS='1',
     )
     if device == 'gpu':
         os.environ.update(
-            THEANO_FLAGS='device=cuda',
+            AESARA_FLAGS='device=cuda',
         )
-    import theano  # noqa: F401
+    import aesara  # noqa: F401
+    # clang needs this, aesara#127
+    aesara.config.gcc__cxxflags = "-Wno-c++11-narrowing"
     yield
 
 
@@ -194,7 +196,7 @@ __backends__ = {
     'bohrium': setup_bohrium,
     'cupy': setup_cupy,
     'jax': setup_jax,
-    'theano': setup_theano,
+    'aesara': setup_aesara,
     'numba': setup_numba,
     'pytorch': setup_pytorch,
     'tensorflow': setup_tensorflow

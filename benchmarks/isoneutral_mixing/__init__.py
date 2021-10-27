@@ -56,11 +56,11 @@ def get_callable(backend, size, device='cpu'):
 
 
 __implementations__ = (
+    'aesara',
     'bohrium',
     'cupy',
     'numba',
     'numpy',
     'jax',
     'pytorch',
-    'theano',
 )

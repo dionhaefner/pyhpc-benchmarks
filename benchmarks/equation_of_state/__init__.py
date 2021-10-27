@@ -35,6 +35,7 @@ def get_callable(backend, size, device='cpu'):
 
 
 __implementations__ = (
+    'aesara',
     'bohrium',
     'cupy',
     'jax',
@@ -42,5 +43,4 @@ __implementations__ = (
     'numpy',
     'pytorch',
     'tensorflow',
-    'theano',
 )

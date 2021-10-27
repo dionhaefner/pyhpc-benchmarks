@@ -7,8 +7,7 @@
 ==========================================================================
 """
 
-import numpy as np
-import theano
+import aesara
 
 v01 = 9.998420897506056e+2
 v02 = 2.839940833161907e0
@@ -102,7 +101,7 @@ def gsw_dHdT(sa, ct, p):
     t74 = v04 * ct
     t76 = ct * (v03 + t74)
     t79 = v07 * ct
-    t82 = theano.tensor.sqrt(sa)
+    t82 = aesara.tensor.sqrt(sa)
     t83 = v11 * ct
     t85 = ct * (v10 + t83)
     t92 = v01 + ct * (v02 + t76) + sa * (v05 + ct *
@@ -122,7 +121,7 @@ def gsw_dHdT(sa, ct, p):
     t130 = p * (1.0 * v12 + 1.0 * t7 + 1.0 * t11 + t128)
     t131 = 1.0 / t92
     t133 = 1.0 + t130 * t131
-    t134 = theano.tensor.log(t133)
+    t134 = aesara.tensor.log(t133)
     t143 = v37 + ct * (v38 + t59) + sa * (v41 + v42 * ct) + t120 * t20
     t152 = t37 * p
     t156 = t92 ** 2
@@ -140,7 +139,7 @@ def gsw_dHdT(sa, ct, p):
     t234 = v21 + ct * (v22 + t169) + sa * (v26 + ct * (v27 + t179) + v36 *
                                            sa + t82 * (v31 + ct * (v32 + t189))) + t217 * t20
     t241 = t64 - t92 * t19
-    t242 = theano.tensor.sqrt(t241)
+    t242 = aesara.tensor.sqrt(t241)
     t243 = 1.0 / t242
     t244 = t4 + t8 + t12 - t242
     t245 = 1.0 / t244
@@ -148,7 +147,7 @@ def gsw_dHdT(sa, ct, p):
     t248 = 1.0 / t247
     t249 = t242 * t245 * t248
     t252 = 1.0 + 2.0 * t128 * t249
-    t253 = theano.tensor.log(t252)
+    t253 = aesara.tensor.log(t252)
     t254 = t243 * t253
     t259 = t234 * t19 - t143 * t13
     t264 = t259 * t20
@@ -179,12 +178,12 @@ def gsw_dHdT(sa, ct, p):
 
 
 symbolic_inputs = [
-    theano.tensor.dtensor3('s'),
-    theano.tensor.dtensor3('t'),
-    theano.tensor.TensorType(dtype='float64', broadcastable=(True, True, False))('p')
+    aesara.tensor.dtensor3('s'),
+    aesara.tensor.dtensor3('t'),
+    aesara.tensor.TensorType(dtype='float64', broadcastable=(True, True, False))('p')
 ]
-gsw_dHdT_theano = theano.function(symbolic_inputs, gsw_dHdT(*symbolic_inputs))
+gsw_dHdT_aesara = aesara.function(symbolic_inputs, gsw_dHdT(*symbolic_inputs))
 
 
 def run(sa, ct, p, device='cpu'):
-    return gsw_dHdT_theano(sa, ct, p)
+    return gsw_dHdT_aesara(sa, ct, p)
