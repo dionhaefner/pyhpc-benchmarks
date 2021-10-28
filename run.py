@@ -126,7 +126,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
     try:
         check_backend_conflicts(backend, device)
     except BackendConflict as exc:
-        click.echo(str(exc), err=True)
+        click.echo(f"Backend conflict: {exc!s}", err=True)
         raise click.Abort()
 
     runs = sorted(itertools.product(backend, size))
