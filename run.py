@@ -7,9 +7,10 @@ import click
 
 from backends import (
     __backends__ as setup_functions,
-    BackendNotSupported,
-    convert_to_numpy,
     check_backend_conflicts,
+    convert_to_numpy,
+    BackendNotSupported,
+    BackendConflict,
 )
 from utilities import (
     Timer,
@@ -122,7 +123,11 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
             )
             backend.remove(b)
 
-    check_backend_conflicts(backend, device)
+    try:
+        check_backend_conflicts(backend, device)
+    except BackendConflict as exc:
+        click.echo(str(exc), err=True)
+        raise click.Abort()
 
     runs = sorted(itertools.product(backend, size))
 

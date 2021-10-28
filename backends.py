@@ -40,11 +40,17 @@ class BackendNotSupported(Exception):
     pass
 
 
+class BackendConflict(Exception):
+    pass
+
+
 def check_backend_conflicts(backends, device):
     if device == "gpu":
         gpu_backends = set(backends) - {"numba", "numpy", "aesara"}
         if len(gpu_backends) > 1:
-            raise RuntimeError("can only use 1 GPU backend at the same time")
+            raise BackendConflict(
+                f"Can only use one GPU backend at the same time (got: {gpu_backends})"
+            )
 
 
 class SetupContext:
