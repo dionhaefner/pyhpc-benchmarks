@@ -46,10 +46,10 @@ Two reasons:
 
 - [NumPy](https://numpy.org) (CPU only)
 - [Numba](https://numba.pydata.org) (CPU only)
+- [Aesara](https://github.com/aesara-devs/aesara) (CPU only)
 - [Jax](https://github.com/google/jax)
 - [Tensorflow](https://www.tensorflow.org)
 - [Pytorch](https://pytorch.org)
-- [Aesara](https://github.com/aesara-devs/aesara)
 - [CuPy](https://cupy.chainer.org/) (GPU only)
 
 (not every backend is available for every benchmark)
