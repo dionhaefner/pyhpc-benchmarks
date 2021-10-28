@@ -62,11 +62,11 @@ class SetupContext:
         self._f_iter = iter(self._f(*args, **kwargs))
 
         try:
-            next(self._f_iter)
+            module = next(self._f_iter)
         except Exception as e:
             raise BackendNotSupported(str(e)) from None
 
-        return self
+        return module
 
     def __exit__(self, *args, **kwargs):
         try:
@@ -84,10 +84,12 @@ setup_function = SetupContext
 
 @setup_function
 def setup_numpy(device="cpu"):
+    import numpy
+
     os.environ.update(
         OMP_NUM_THREADS="1",
     )
-    yield
+    yield numpy
 
 
 @setup_function
@@ -98,11 +100,11 @@ def setup_aesara(device="cpu"):
     if device == "gpu":
         raise RuntimeError("aesara uses JAX on GPU")
 
-    import aesara  # noqa: F401
+    import aesara
 
     # clang needs this, aesara#127
     aesara.config.gcc__cxxflags = "-Wno-c++11-narrowing"
-    yield
+    yield aesara
 
 
 @setup_function
@@ -110,18 +112,18 @@ def setup_numba(device="cpu"):
     os.environ.update(
         OMP_NUM_THREADS="1",
     )
-    import numba  # noqa: F401
+    import numba
 
-    yield
+    yield numba
 
 
 @setup_function
 def setup_cupy(device="cpu"):
     if device != "gpu":
         raise RuntimeError("cupy requires GPU mode")
-    import cupy  # noqa: F401
+    import cupy
 
-    yield
+    yield cupy
 
 
 @setup_function
@@ -151,7 +153,7 @@ def setup_jax(device="cpu"):
     if device == "gpu":
         assert len(jax.devices()) > 0
 
-    yield
+    yield jax
 
 
 @setup_function
@@ -164,7 +166,8 @@ def setup_pytorch(device="cpu"):
     if device == "gpu":
         assert torch.cuda.is_available()
         assert torch.cuda.device_count() > 0
-    yield
+
+    yield torch
 
 
 @setup_function
@@ -182,7 +185,8 @@ def setup_tensorflow(device="cpu"):
         assert gpus
     else:
         tf.config.experimental.set_visible_devices([], "GPU")
-    yield
+
+    yield tf
 
 
 __backends__ = {
