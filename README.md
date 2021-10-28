@@ -158,15 +158,24 @@ $ for backend in jax cupy pytorch tensorflow; do
 
 #### Equation of state
 
-![Equation of state on CPU](results/magni-plots/bench-equation_of_state-CPU.png?raw=true) ![Equation of state on GPU](results/magni-plots/bench-equation_of_state-GPU.png?raw=true)
-
+<p align="middle">
+  <img src="results/magni-plots/bench-equation_of_state-CPU.png?raw=true" width="400">
+  <img src="results/magni-plots/bench-equation_of_state-GPU.png?raw=true" width="400">
+</p>
+  
 #### Isoneutral mixing
 
-![Isoneutral mixing on CPU](results/magni-plots/bench-isoneutral_mixing-CPU.png?raw=true) ![Isoneutral mixing on GPU](results/magni-plots/bench-isoneutral_mixing-GPU.png?raw=true)
+<p align="middle">
+  <img src="results/magni-plots/bench-isoneutral_mixing-CPU.png?raw=true" width="400">
+  <img src="results/magni-plots/bench-isoneutral_mixing-GPU.png?raw=true" width="400">
+</p>
 
 #### Turbulent kinetic energy
 
-![Turbulent kinetic energy on CPU](results/magni-plots/bench-turbulent_kinetic_energy-CPU.png?raw=true) ![Turbulent kinetic energy on GPU](results/magni-plots/bench-turbulent_kinetic_energy-GPU.png?raw=true)
+<p align="middle">
+  <img src="results/magni-plots/bench-turbulent_kinetic_energy-CPU.png?raw=true" width="400">
+  <img src="results/magni-plots/bench-turbulent_kinetic_energy-GPU.png?raw=true" width="400">
+</p>
 
 ### Full reports
 
@@ -177,14 +186,16 @@ $ for backend in jax cupy pytorch tensorflow; do
 
 Lessons I learned by assembling these benchmarks: (your mileage may vary)
 
-- The performance of Jax seems very competitive, both on GPU and CPU. It is consistently among the top implementations on CPU, and shows the best performance on GPU.
-- Jax' performance on GPU seems to be quite hardware dependent. Jax performance significantly better (relatively speaking) on a Tesla P100 than a Tesla K80.
-- Numba is a great choice on CPU if you don't mind writing explicit for loops (which can be more readable than a vectorized implementation), being slightly faster than Jax with little effort.
+- The performance of JAX is very competitive, both on GPU and CPU. It is consistently among the top implementations on both platforms.
+- Pytorch performs very well on GPU for large problems (slightly better than JAX), but its CPU performance is not great for tasks with many slicing operations.
+- Numba is a great choice on CPU if you don't mind writing explicit for loops (which can be more readable than a vectorized implementation), being slightly faster than JAX with little effort.
+- JAX performance on GPU seems to be quite hardware dependent. JAX performancs significantly better (relatively speaking) on a Tesla P100 than a Tesla K80.
 - If you have embarrasingly parallel workloads, speedups of > 1000x are easy to achieve on high-end GPUs.
-- Tensorflow is not great for applications like ours, since it lacks tools to apply partial updates to tensors (in the sense of `tensor[2:-2] = 0.`).
-- Don't bother using Pytorch or vanilla Tensorflow on CPU (you won't get much faster than NumPy). Tensorflow with XLA (`experimental_compile`) is great though!
+- TPUs are catching up to GPUs. We can now get similar performance to a high-end GPU on these workloads.
+- Tensorflow is not great for applications like ours, since it lacks tools to apply partial updates to tensors (such as `tensor[2:-2] = 0.`).
+- If you use Tensorflow on CPU, make sure to use XLA (`experimental_compile`) for tremendous speedups.
 - CuPy is nice! Often you don't need to change anything in your NumPy code to have it run on GPU (with decent, but not outstanding performance).
-- Reaching Fortran performance on CPU with vectorized implementations is hard :)
+- Reaching Fortran performance on CPU for non-trivial tasks is hard :)
 
 ## Contributing
 
