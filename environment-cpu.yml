@@ -1,18 +1,15 @@
 name: pyhpc-bench-cpu
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
-  - python>=3.6
+  - python>3.6,<3.9
   - pip
-  - numpy
-  - pytorch
-  - tensorflow>=2.0
-  - theano
-  - numba
-  - click
-  - scipy
   - pip:
-    - bohrium
-    - jaxlib
-    - jax
+    - click
+    - aesara
+    - numba
+    - torch>=1.10
+    - tensorflow>=2.0
+    - -f https://storage.googleapis.com/jax-releases/jax_releases.html
+    - jax[cpu]

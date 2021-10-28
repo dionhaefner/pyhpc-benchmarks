@@ -46,11 +46,10 @@ Two reasons:
 
 - [NumPy](https://numpy.org) (CPU only)
 - [Numba](https://numba.pydata.org) (CPU only)
+- [Aesara](https://github.com/aesara-devs/aesara) (CPU only)
 - [Jax](https://github.com/google/jax)
 - [Tensorflow](https://www.tensorflow.org)
 - [Pytorch](https://pytorch.org)
-- [Theano](http://deeplearning.net/software/theano/)
-- [Bohrium](http://www.bh107.org)
 - [CuPy](https://cupy.chainer.org/) (GPU only)
 
 (not every backend is available for every benchmark)
@@ -71,14 +70,14 @@ As a rule of thumb (from our experience with Veros), the performance of a Fortra
 For CPU:
 
 ```bash
-$ conda create -f environment-cpu.yml
+$ conda env create -f environment-cpu.yml
 $ conda activate pyhpc-bench-cpu
 ```
 
 GPU:
 
 ```bash
-$ conda create -f environment-gpu.yml
+$ conda env create -f environment-gpu.yml
 $ conda activate pyhpc-bench-gpu
 ```
 
@@ -113,7 +112,7 @@ Options:
   -s, --size INTEGER              Run benchmark for this array size
                                   (repeatable)  [default: 4096, 16384, 65536,
                                   262144, 1048576, 4194304]
-  -b, --backend [numpy|bohrium|cupy|jax|theano|numba|pytorch|tensorflow]
+  -b, --backend [numpy|cupy|jax|aesara|numba|pytorch|tensorflow]
                                   Run benchmark with this backend (repeatable)
                                   [default: run all backends]
   -r, --repetitions INTEGER       Fixed number of iterations to run for each
@@ -143,19 +142,12 @@ $ taskset -c 0 python run.py benchmarks/<benchmark_name>
 Some backends use all available GPUs by default, some don't. If you have multiple GPUs, you can set the
 one to be used through `CUDA_VISIBLE_DEVICES`, so keep things fair.
 
-```bash
-$ conda activate pyhpc-bench-gpu
-$ export CUDA_VISIBLE_DEVICES="0"
-$ python run.py benchmarks/<benchmark_name> --gpu
-```
-
-Some backends are pretty greedy with allocating memory. For large problem sizes, it can be a good idea to
-only run one backend at a time (and NumPy for reference):
+Some backends are greedy with allocating memory. On GPU, you can only run one backend at a time (add NumPy for reference):
 
 ```bash
 $ conda activate pyhpc-bench-gpu
 $ export CUDA_VISIBLE_DEVICES="0"
-$ for backend in bohrium jax cupy pytorch tensorflow; do
+$ for backend in jax cupy pytorch tensorflow; do
 ...    python run benchmarks/<benchmark_name> --device gpu -b $backend -b numpy -s 10_000_000
 ...    done
 ```

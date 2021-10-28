@@ -1,10 +1,9 @@
 import os
-import importlib
 
 import numpy
 
 
-def convert_to_numpy(arr, backend, device='cpu'):
+def convert_to_numpy(arr, backend, device="cpu"):
     """Converts an array or collection of arrays to np.ndarray"""
     if isinstance(arr, (list, tuple)):
         return [convert_to_numpy(subarr, backend, device) for subarr in arr]
@@ -14,32 +13,44 @@ def convert_to_numpy(arr, backend, device='cpu'):
         # we don't want subclasses to get passed through
         return arr
 
-    if backend == 'bohrium':
-        return arr.copy2numpy()
-
-    if backend == 'cupy':
+    if backend == "cupy":
         return arr.get()
 
-    if backend == 'jax':
+    if backend == "jax":
         return numpy.asarray(arr)
 
-    if backend == 'pytorch':
-        if device == 'gpu':
+    if backend == "pytorch":
+        if device == "gpu":
             return numpy.asarray(arr.cpu())
         else:
             return numpy.asarray(arr)
 
-    if backend == 'tensorflow':
+    if backend == "tensorflow":
         return numpy.asarray(arr)
 
-    if backend == 'theano':
+    if backend == "aesara":
         return numpy.asarray(arr)
 
-    raise RuntimeError(f'Got unexpected array / backend combination: {type(arr)} / {backend}')
+    raise RuntimeError(
+        f"Got unexpected array / backend combination: {type(arr)} / {backend}"
+    )
 
 
 class BackendNotSupported(Exception):
     pass
+
+
+class BackendConflict(Exception):
+    pass
+
+
+def check_backend_conflicts(backends, device):
+    if device == "gpu":
+        gpu_backends = set(backends) - {"numba", "numpy", "aesara"}
+        if len(gpu_backends) > 1:
+            raise BackendConflict(
+                f"Can only use one GPU backend at the same time (got: {gpu_backends})"
+            )
 
 
 class SetupContext:
@@ -57,11 +68,11 @@ class SetupContext:
         self._f_iter = iter(self._f(*args, **kwargs))
 
         try:
-            next(self._f_iter)
+            module = next(self._f_iter)
         except Exception as e:
             raise BackendNotSupported(str(e)) from None
 
-        return self
+        return module
 
     def __exit__(self, *args, **kwargs):
         try:
@@ -76,126 +87,120 @@ setup_function = SetupContext
 
 # setup function definitions
 
+
 @setup_function
-def setup_numpy(device='cpu'):
+def setup_numpy(device="cpu"):
+    import numpy
+
     os.environ.update(
-        OMP_NUM_THREADS='1',
+        OMP_NUM_THREADS="1",
     )
-    yield
+    yield numpy
 
 
 @setup_function
-def setup_bohrium(device='cpu'):
+def setup_aesara(device="cpu"):
     os.environ.update(
-        OMP_NUM_THREADS='1',
-        BH_STACK='opencl' if device == 'gpu' else 'openmp',
+        OMP_NUM_THREADS="1",
     )
-    try:
-        import bohrium  # noqa: F401
-        yield
-    finally:
-        # bohrium does things to numpy
-        importlib.reload(numpy)
+    if device == "gpu":
+        raise RuntimeError("aesara uses JAX on GPU")
+
+    import aesara
+
+    # clang needs this, aesara#127
+    aesara.config.gcc__cxxflags = "-Wno-c++11-narrowing"
+    yield aesara
 
 
 @setup_function
-def setup_theano(device='cpu'):
+def setup_numba(device="cpu"):
     os.environ.update(
-        OMP_NUM_THREADS='1',
+        OMP_NUM_THREADS="1",
     )
-    if device == 'gpu':
-        os.environ.update(
-            THEANO_FLAGS='device=cuda',
-        )
-    import theano  # noqa: F401
-    yield
+    import numba
+
+    yield numba
 
 
 @setup_function
-def setup_numba(device='cpu'):
-    os.environ.update(
-        OMP_NUM_THREADS='1',
-    )
-    import numba  # noqa: F401
-    yield
+def setup_cupy(device="cpu"):
+    if device != "gpu":
+        raise RuntimeError("cupy requires GPU mode")
+    import cupy
+
+    yield cupy
 
 
 @setup_function
-def setup_cupy(device='cpu'):
-    if device != 'gpu':
-        raise RuntimeError('cupy requires GPU mode')
-    import cupy  # noqa: F401
-    yield
-
-
-@setup_function
-def setup_jax(device='cpu'):
+def setup_jax(device="cpu"):
     os.environ.update(
         XLA_FLAGS=(
-            '--xla_cpu_multi_thread_eigen=false '
-            'intra_op_parallelism_threads=1 '
-            'inter_op_parallelism_threads=1 '
+            "--xla_cpu_multi_thread_eigen=false "
+            "intra_op_parallelism_threads=1 "
+            "inter_op_parallelism_threads=1 "
         ),
-        XLA_PYTHON_CLIENT_PREALLOCATE='false',
     )
 
-    if device in ('cpu', 'gpu'):
+    if device in ("cpu", "gpu"):
         os.environ.update(JAX_PLATFORM_NAME=device)
 
     import jax
     from jax.config import config
 
-    if device == 'tpu':
-        config.update('jax_xla_backend', 'tpu_driver')
-        config.update('jax_backend_target', os.environ.get('JAX_BACKEND_TARGET'))
+    if device == "tpu":
+        config.update("jax_xla_backend", "tpu_driver")
+        config.update("jax_backend_target", os.environ.get("JAX_BACKEND_TARGET"))
 
-    if device != 'tpu':
+    if device != "tpu":
         # use 64 bit floats (not supported on TPU)
-        config.update('jax_enable_x64', True)
+        config.update("jax_enable_x64", True)
 
-    if device == 'gpu':
+    if device == "gpu":
         assert len(jax.devices()) > 0
 
-    yield
+    yield jax
 
 
 @setup_function
-def setup_pytorch(device='cpu'):
+def setup_pytorch(device="cpu"):
     os.environ.update(
-        OMP_NUM_THREADS='1',
+        OMP_NUM_THREADS="1",
     )
     import torch
-    if device == 'gpu':
+
+    if device == "gpu":
         assert torch.cuda.is_available()
         assert torch.cuda.device_count() > 0
-    yield
+
+    yield torch
 
 
 @setup_function
-def setup_tensorflow(device='cpu'):
+def setup_tensorflow(device="cpu"):
     os.environ.update(
-        OMP_NUM_THREADS='1',
-        XLA_PYTHON_CLIENT_PREALLOCATE='false',
+        OMP_NUM_THREADS="1",
     )
     import tensorflow as tf
+
     tf.config.threading.set_inter_op_parallelism_threads(1)
     tf.config.threading.set_intra_op_parallelism_threads(1)
 
-    if device == 'gpu':
-        gpus = tf.config.experimental.list_physical_devices('GPU')
+    if device == "gpu":
+        gpus = tf.config.experimental.list_physical_devices("GPU")
         assert gpus
     else:
-        tf.config.experimental.set_visible_devices([], 'GPU')
-    yield
+        tf.config.experimental.set_visible_devices([], "GPU")
+
+    yield tf
 
 
 __backends__ = {
-    'numpy': setup_numpy,
-    'bohrium': setup_bohrium,
-    'cupy': setup_cupy,
-    'jax': setup_jax,
-    'theano': setup_theano,
-    'numba': setup_numba,
-    'pytorch': setup_pytorch,
-    'tensorflow': setup_tensorflow
+    "numpy": setup_numpy,
+    "cupy": setup_cupy,
+    "jax": setup_jax,
+    "aesara": setup_aesara,
+    "numba": setup_numba,
+    "pytorch": setup_pytorch,
+    "tensorflow": setup_tensorflow,
 }
