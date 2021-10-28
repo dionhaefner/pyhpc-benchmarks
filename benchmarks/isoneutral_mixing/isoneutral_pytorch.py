@@ -68,6 +68,8 @@ def isoneutral_diffusion_pre(
     K_iso_steep = 50.0
     tau = 0
 
+    device = K_11.device
+
     dTdx = torch.zeros_like(K_11)
     dSdx = torch.zeros_like(K_11)
     dTdy = torch.zeros_like(K_11)
@@ -152,14 +154,14 @@ def isoneutral_diffusion_pre(
                 + drdS[1 + ip : -2 + ip, 2:-2, ki:] * dSdz[1 + ip : -2 + ip, 2:-2, :su]
             )
             sxe = -drodxe / (
-                torch.min(drodze, torch.tensor([0.0], device=drodxe.device)) - epsln
+                torch.min(drodze, torch.tensor([0.0], device=device)) - epsln
             )
             taper = dm_taper(sxe)
             sumz[:, :, ki:] += (
                 dzw[None, None, :su]
                 * maskU[1:-2, 2:-2, ki:]
                 * torch.max(
-                    torch.tensor([K_iso_steep], device=sumz.device),
+                    torch.tensor([K_iso_steep], device=device),
                     diffloc[1:-2, 2:-2, ki:] * taper,
                 )
             )
@@ -195,14 +197,14 @@ def isoneutral_diffusion_pre(
                 + drdS[2:-2, 1 + jp : -2 + jp, ki:] * dSdz[2:-2, 1 + jp : -2 + jp, :su]
             )
             syn = -drodyn / (
-                torch.min(torch.tensor([0.0], device=syn.device), drodzn) - epsln
+                torch.min(torch.tensor([0.0], device=device), drodzn) - epsln
             )
             taper = dm_taper(syn)
             sumz[:, :, ki:] += (
                 dzw[None, None, :su]
                 * maskV[2:-2, 1:-2, ki:]
                 * torch.max(
-                    torch.tensor([K_iso_steep], device=sumz.device),
+                    torch.tensor([K_iso_steep], device=device),
                     diffloc[2:-2, 1:-2, ki:] * taper,
                 )
             )
@@ -235,7 +237,7 @@ def isoneutral_diffusion_pre(
                 + drdS[2:-2, 2:-2, sl:su] * dSdx[1 + ip : -3 + ip, 2:-2, sl:su]
             )
             sxb = -drodxb / (
-                torch.min(torch.tensor([0.0], device=drodxb.device), drodzb) - epsln
+                torch.min(torch.tensor([0.0], device=device), drodzb) - epsln
             )
             taper = dm_taper(sxb)
             sumx += (
@@ -255,7 +257,7 @@ def isoneutral_diffusion_pre(
                 + drdS[2:-2, 2:-2, sl:su] * dSdy[2:-2, 1 + jp : -3 + jp, sl:su]
             )
             syb = -drodyb / (
-                torch.min(torch.tensor([0.0], device=drodzb.device), drodzb) - epsln
+                torch.min(torch.tensor([0.0], device=device), drodzb) - epsln
             )
             taper = dm_taper(syb)
             sumy += (
