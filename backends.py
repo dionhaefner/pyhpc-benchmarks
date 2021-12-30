@@ -133,13 +133,16 @@ def setup_transonic_pythran(device="cpu"):
             CFLAGS="-O3 -ffast-math",
         )
 
+    import logging
     import transonic as ts
+    from transonic.log import logger
     import pythran
 
     yield pythran
 
     #  For JIT this is good to have to wait in the first run.
-    #  FIXME: The "setup" function is called multiple times by the benchmark. Why?
+    #  FIXME: The "setup" function is called multiple times by the benchmark script run.py
+    logger.setLevel(logging.ERROR)  # To avoid INFO logs "Wait for all extensions" multiple times.
     ts.wait_for_all_extensions()
 
 
