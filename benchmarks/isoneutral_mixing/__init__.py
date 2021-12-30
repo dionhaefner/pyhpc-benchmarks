@@ -83,4 +83,5 @@ __implementations__ = (
     "numpy",
     "jax",
     "pytorch",
+    "transonic_pythran",
 )
