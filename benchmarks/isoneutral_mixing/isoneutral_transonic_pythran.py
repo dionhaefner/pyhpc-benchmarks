@@ -22,6 +22,13 @@ def get_drhodS(salt, temp, p):
     return betaS * rho0 * np.ones_like(temp)
 
 
+def dm_taper(sx, iso_slopec, iso_dslope):
+    """
+    tapering function for isopycnal slopes
+    """
+    return 0.5 * (1.0 + np.tanh((-np.abs(sx) + iso_slopec) / iso_dslope))
+
+
 @jit(native=True, xsimd=True)
 def isoneutral_diffusion_pre(
     maskT,
@@ -114,12 +121,6 @@ def isoneutral_diffusion_pre(
         / dyu[np.newaxis, :-1, np.newaxis]
     )
 
-    def dm_taper(sx):
-        """
-        tapering function for isopycnal slopes
-        """
-        return 0.5 * (1.0 + np.tanh((-np.abs(sx) + iso_slopec) / iso_dslope))
-
     """
     Compute Ai_ez and K11 on center of east face of T cell.
     """
@@ -147,7 +148,7 @@ def isoneutral_diffusion_pre(
                 * dSdz[1 + ip : -2 + ip, 2:-2, : -1 + kr or None]
             )
             sxe = -drodxe / (np.minimum(0.0, drodze) - epsln)
-            taper = dm_taper(sxe)
+            taper = dm_taper(sxe, iso_slopec, iso_dslope)
             sumz[:, :, ki:] += (
                 dzw[np.newaxis, np.newaxis, : -1 + kr or None]
                 * maskU[1:-2, 2:-2, ki:]
@@ -159,7 +160,7 @@ def isoneutral_diffusion_pre(
     """
     Compute Ai_nz and K_22 on center of north face of T cell.
     """
-    diffloc[...] = 0
+    diffloc[:, :, :] = 0
     diffloc[2:-2, 1:-2, 1:] = 0.25 * (
         K_iso[2:-2, 1:-2, 1:]
         + K_iso[2:-2, 1:-2, :-1]
@@ -183,7 +184,7 @@ def isoneutral_diffusion_pre(
                 * dSdz[2:-2, 1 + jp : -2 + jp, : -1 + kr or None]
             )
             syn = -drodyn / (np.minimum(0.0, drodzn) - epsln)
-            taper = dm_taper(syn)
+            taper = dm_taper(syn, iso_slopec, iso_dslope)
             sumz[:, :, ki:] += (
                 dzw[np.newaxis, np.newaxis, : -1 + kr or None]
                 * maskV[2:-2, 1:-2, ki:]
@@ -213,7 +214,7 @@ def isoneutral_diffusion_pre(
                 * dSdx[1 + ip : -3 + ip, 2:-2, kr : -1 + kr or None]
             )
             sxb = -drodxb / (np.minimum(0.0, drodzb) - epsln)
-            taper = dm_taper(sxb)
+            taper = dm_taper(sxb, iso_slopec, iso_dslope)
             sumx += (
                 dxu[1 + ip : -3 + ip, np.newaxis, np.newaxis]
                 * K_iso[2:-2, 2:-2, :-1]
@@ -233,7 +234,7 @@ def isoneutral_diffusion_pre(
                 * dSdy[2:-2, 1 + jp : -3 + jp, kr : -1 + kr or None]
             )
             syb = -drodyb / (np.minimum(0.0, drodzb) - epsln)
-            taper = dm_taper(syb)
+            taper = dm_taper(syb, iso_slopec, iso_dslope)
             sumy += (
                 facty[np.newaxis, :, np.newaxis]
                 * K_iso[2:-2, 2:-2, :-1]
