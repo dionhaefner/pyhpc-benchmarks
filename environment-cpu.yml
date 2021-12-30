@@ -13,3 +13,6 @@ dependencies:
     - tensorflow>=2.0
     - -f https://storage.googleapis.com/jax-releases/jax_releases.html
     - jax[cpu]
+    - transonic
+    - cython
+    - pythran

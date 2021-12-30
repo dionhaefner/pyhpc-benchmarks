@@ -124,6 +124,26 @@ def setup_numba(device="cpu"):
 
 
 @setup_function
+def setup_transonic_pythran(device="cpu"):
+    if device == "gpu":
+        raise RuntimeError("Pythran on GPU requires adding OpenMP annotations")
+    else:
+        os.environ.update(
+            OMP_NUM_THREADS="1",
+            CFLAGS="-O3 -ffast-math",
+        )
+
+    import transonic as ts
+    import pythran
+
+    yield pythran
+
+    #  For JIT this is good to have to wait in the first run.
+    #  FIXME: The "setup" function is called multiple times by the benchmark. Why?
+    ts.wait_for_all_extensions()
+
+
+@setup_function
 def setup_cupy(device="cpu"):
     if device != "gpu":
         raise RuntimeError("cupy requires GPU mode")
@@ -203,4 +223,5 @@ __backends__ = {
     "numba": setup_numba,
     "pytorch": setup_pytorch,
     "tensorflow": setup_tensorflow,
+    "transonic_pythran": setup_transonic_pythran,
 }
