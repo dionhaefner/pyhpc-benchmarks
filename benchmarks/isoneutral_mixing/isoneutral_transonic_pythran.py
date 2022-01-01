@@ -159,7 +159,7 @@ def isoneutral_diffusion_pre(
     """
     Compute Ai_nz and K_22 on center of north face of T cell.
     """
-    diffloc[...] = 0
+    diffloc[:, :, :] = 0
     diffloc[2:-2, 1:-2, 1:] = 0.25 * (
         K_iso[2:-2, 1:-2, 1:]
         + K_iso[2:-2, 1:-2, :-1]
