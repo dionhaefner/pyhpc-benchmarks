@@ -147,6 +147,29 @@ def setup_transonic_pythran(device="cpu"):
 
 
 @setup_function
+def setup_transonic_cython(device="cpu"):
+    if device == "gpu":
+        raise RuntimeError("Cython on GPU in not implemented in Transonic.")
+    else:
+        os.environ.update(
+            OMP_NUM_THREADS="1",
+            CFLAGS="-O3 -ffast-math",
+        )
+
+    import logging
+    import transonic as ts
+    from transonic.log import logger
+    import cython
+
+    yield cython
+
+    #  For JIT this is good to have to wait in the first run.
+    #  FIXME: The "setup" function is called multiple times by the benchmark script run.py
+    logger.setLevel(logging.ERROR)  # To avoid INFO logs "Wait for all extensions" multiple times.
+    ts.wait_for_all_extensions()
+
+
+@setup_function
 def setup_cupy(device="cpu"):
     if device != "gpu":
         raise RuntimeError("cupy requires GPU mode")
@@ -227,4 +250,5 @@ __backends__ = {
     "pytorch": setup_pytorch,
     "tensorflow": setup_tensorflow,
     "transonic_pythran": setup_transonic_pythran,
+    "transonic_cython": setup_transonic_cython,
 }

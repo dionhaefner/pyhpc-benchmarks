@@ -44,4 +44,5 @@ __implementations__ = (
     "pytorch",
     "tensorflow",
     "transonic_pythran",
+    "transonic_cython",
 )
