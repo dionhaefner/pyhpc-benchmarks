@@ -94,7 +94,7 @@ def format_output(stats, benchmark_title, device="cpu"):
 
     header = stats.dtype.names
     col_widths = collections.defaultdict(lambda: 8)
-    col_widths.update(size=12, backend=10)
+    col_widths.update(size=12, backend=20)
 
     def format_col(col_name, value, is_time=False):
         col_width = col_widths[col_name]

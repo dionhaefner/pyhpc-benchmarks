@@ -72,6 +72,7 @@ For CPU:
 ```bash
 $ conda env create -f environment-cpu.yml
 $ conda activate pyhpc-bench-cpu
+$ sudo python -m pyperf system tune
 ```
 
 GPU:
