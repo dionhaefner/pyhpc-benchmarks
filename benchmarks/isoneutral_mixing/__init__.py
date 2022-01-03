@@ -84,4 +84,5 @@ __implementations__ = (
     "jax",
     "pytorch",
     "transonic_pythran",
+    "transonic_cython",
 )
