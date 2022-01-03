@@ -31,7 +31,7 @@ def dm_taper(sx):
     return 0.5 * (1.0 + np.tanh((-np.abs(sx) + iso_slopec) / iso_dslope))
 
 
-@jit(native=True)
+@jit(backend="cython", native=True)
 def isoneutral_diffusion_pre(
     maskT,
     maskU,
@@ -62,10 +62,9 @@ def isoneutral_diffusion_pre(
     following functional formulation by Griffies et al
     Code adopted from MOM2.1
     """
-    nx: int
-    ny: int
-    nz: int
-    nx, ny, nz = maskT.shape
+    nx: int = maskT.shape[0]
+    ny: int = maskT.shape[1]
+    nz: int = maskT.shape[2]
 
 
     epsln: float = 1e-20
