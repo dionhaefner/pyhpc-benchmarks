@@ -80,4 +80,6 @@ __implementations__ = (
     "numba",
     "numpy",
     "pytorch",
+    "transonic_pythran",
+    "transonic_cython",
 )
