@@ -10,11 +10,13 @@ where = np.where
 
 def solve_implicit(ks, a, b, c, d, b_edge=None, d_edge=None):
     land_mask = (ks >= 0)[:, :, np.newaxis]
+    nz = a.shape[2]
+    z_index = np.arange(nz).reshape(1, 1, nz)
     edge_mask = land_mask & (
-        np.arange(a.shape[2])[np.newaxis, np.newaxis, :] == ks[:, :, np.newaxis]
+        z_index == ks[:, :, np.newaxis]
     )
     water_mask = land_mask & (
-        np.arange(a.shape[2])[np.newaxis, np.newaxis, :] >= ks[:, :, np.newaxis]
+        z_index >= ks[:, :, np.newaxis]
     )
 
     a_tri = water_mask * a * np.logical_not(edge_mask)
