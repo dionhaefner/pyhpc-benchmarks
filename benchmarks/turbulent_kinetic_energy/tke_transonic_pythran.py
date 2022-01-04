@@ -60,9 +60,8 @@ def _calc_cr(rjp, rj, rjm, vel):
 
 
 def pad_z_edges(arr):
-    arr_shape = list(arr.shape)
-    arr_shape[2] += 2
-    out = np.zeros(arr_shape, arr.dtype)
+    shape = arr.shape
+    out = np.zeros((shape[0], shape[1], shape[2] + 2), arr.dtype)
     out[:, :, 1:-1] = arr
     return out
 
