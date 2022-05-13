@@ -72,7 +72,7 @@ def pad_z_edges(arr):
     arr_shape = list(arr.shape)
     arr_shape[2] += 2
     out = np.zeros(arr_shape, arr.dtype)
-    out = jax.ops.index_update(out, jax.ops.index[:, :, 1:-1], arr)
+    out = out.at[:, :, 1:-1].set( arr)
     return out
 
 
@@ -127,36 +127,27 @@ def adv_flux_superbee_wgrid(
     Calculates advection of a tracer defined on Wgrid
     """
     maskUtr = np.zeros_like(maskW)
-    maskUtr = jax.ops.index_update(
-        maskUtr, jax.ops.index[:-1, :, :], maskW[1:, :, :] * maskW[:-1, :, :]
+    maskUtr = maskUtr.at[:-1, :, :].set( maskW[1:, :, :] * maskW[:-1, :, :]
     )
 
     adv_fe = np.zeros_like(maskW)
-    adv_fe = jax.ops.index_update(
-        adv_fe,
-        jax.ops.index[1:-2, 2:-2, :],
+    adv_fe = adv_fe.at[1:-2, 2:-2, :].set(
         _adv_superbee(u_wgrid, var, maskUtr, dxt, 0, cost, cosu, dt_tracer),
     )
 
     maskVtr = np.zeros_like(maskW)
-    maskVtr = jax.ops.index_update(
-        maskVtr, jax.ops.index[:, :-1, :], maskW[:, 1:, :] * maskW[:, :-1, :]
+    maskVtr = maskVtr.at[:, :-1, :].set( maskW[:, 1:, :] * maskW[:, :-1, :]
     )
     adv_fn = np.zeros_like(maskW)
-    adv_fn = jax.ops.index_update(
-        adv_fn,
-        jax.ops.index[2:-2, 1:-2, :],
+    adv_fn = adv_fn.at[2:-2, 1:-2, :].set(
         _adv_superbee(v_wgrid, var, maskVtr, dyt, 1, cost, cosu, dt_tracer),
     )
 
     maskWtr = np.zeros_like(maskW)
-    maskWtr = jax.ops.index_update(
-        maskWtr, jax.ops.index[:, :, :-1], maskW[:, :, 1:] * maskW[:, :, :-1]
+    maskWtr = maskWtr.at[:, :, :-1].set( maskW[:, :, 1:] * maskW[:, :, :-1]
     )
     adv_ft = np.zeros_like(maskW)
-    adv_ft = jax.ops.index_update(
-        adv_ft,
-        jax.ops.index[2:-2, 2:-2, :-1],
+    adv_ft = adv_ft.at[2:-2, 2:-2, :-1].set(
         _adv_superbee(w_wgrid, var, maskWtr, dzw, 2, cost, cosu, dt_tracer),
     )
 
@@ -220,9 +211,7 @@ def integrate_tke(
     d_tri = np.zeros_like(maskU[2:-2, 2:-2])
     delta = np.zeros_like(maskU[2:-2, 2:-2])
 
-    delta = jax.ops.index_update(
-        delta,
-        jax.ops.index[:, :, :-1],
+    delta = delta.at[:, :, :-1].set(
         dt_tke
         / dzt[np.newaxis, np.newaxis, 1:]
         * alpha_tke
@@ -230,25 +219,18 @@ def integrate_tke(
         * (kappaM[2:-2, 2:-2, :-1] + kappaM[2:-2, 2:-2, 1:]),
     )
 
-    a_tri = jax.ops.index_update(
-        a_tri,
-        jax.ops.index[:, :, 1:-1],
+    a_tri = a_tri.at[:, :, 1:-1].set(
         -delta[:, :, :-2] / dzw[np.newaxis, np.newaxis, 1:-1],
     )
-    a_tri = jax.ops.index_update(
-        a_tri, jax.ops.index[:, :, -1], -delta[:, :, -2] / (0.5 * dzw[-1])
+    a_tri = a_tri.at[:, :, -1].set( -delta[:, :, -2] / (0.5 * dzw[-1])
     )
 
-    b_tri = jax.ops.index_update(
-        b_tri,
-        jax.ops.index[:, :, 1:-1],
+    b_tri = b_tri.at[:, :, 1:-1].set(
         1
         + (delta[:, :, 1:-1] + delta[:, :, :-2]) / dzw[np.newaxis, np.newaxis, 1:-1]
         + dt_tke * c_eps * sqrttke[2:-2, 2:-2, 1:-1] / mxl[2:-2, 2:-2, 1:-1],
     )
-    b_tri = jax.ops.index_update(
-        b_tri,
-        jax.ops.index[:, :, -1],
+    b_tri = b_tri.at[:, :, -1].set(
         1
         + delta[:, :, -2] / (0.5 * dzw[-1])
         + dt_tke * c_eps / mxl[2:-2, 2:-2, -1] * sqrttke[2:-2, 2:-2, -1],
@@ -259,23 +241,17 @@ def integrate_tke(
         + dt_tke * c_eps / mxl[2:-2, 2:-2, :] * sqrttke[2:-2, 2:-2, :]
     )
 
-    c_tri = jax.ops.index_update(
-        c_tri,
-        jax.ops.index[:, :, :-1],
+    c_tri = c_tri.at[:, :, :-1].set(
         -delta[:, :, :-1] / dzw[np.newaxis, np.newaxis, :-1],
     )
 
     d_tri = tke[2:-2, 2:-2, :, tau] + dt_tke * forc[2:-2, 2:-2, :]
-    d_tri = jax.ops.index_add(
-        d_tri,
-        jax.ops.index[:, :, -1],
+    d_tri = d_tri.at[:, :, -1].add(
         dt_tke * forc_tke_surface[2:-2, 2:-2] / (0.5 * dzw[-1]),
     )
 
     sol, water_mask = solve_implicit(ks, a_tri, b_tri, c_tri, d_tri, b_edge=b_tri_edge)
-    tke = jax.ops.index_update(
-        tke,
-        jax.ops.index[2:-2, 2:-2, :, taup1],
+    tke = tke.at[2:-2, 2:-2, :, taup1].set(
         where(water_mask, sol, tke[2:-2, 2:-2, :, taup1]),
     )
 
@@ -284,41 +260,31 @@ def integrate_tke(
     """
     mask = tke[2:-2, 2:-2, -1, taup1] < 0.0
     tke_surf_corr = np.zeros_like(maskU[..., -1])
-    tke_surf_corr = jax.ops.index_update(
-        tke_surf_corr,
-        jax.ops.index[2:-2, 2:-2],
+    tke_surf_corr = tke_surf_corr.at[2:-2, 2:-2].set(
         where(mask, -tke[2:-2, 2:-2, -1, taup1] * 0.5 * dzw[-1] / dt_tke, 0.0),
     )
 
-    tke = jax.ops.index_update(
-        tke,
-        jax.ops.index[2:-2, 2:-2, -1, taup1],
+    tke = tke.at[2:-2, 2:-2, -1, taup1].set(
         np.maximum(0.0, tke[2:-2, 2:-2, -1, taup1]),
     )
 
     """
     add tendency due to lateral diffusion
     """
-    flux_east = jax.ops.index_update(
-        flux_east,
-        jax.ops.index[:-1, :, :],
+    flux_east = flux_east.at[:-1, :, :].set(
         K_h_tke
         * (tke[1:, :, :, tau] - tke[:-1, :, :, tau])
         / (cost[np.newaxis, :, np.newaxis] * dxu[:-1, np.newaxis, np.newaxis])
         * maskU[:-1, :, :],
     )
-    flux_north = jax.ops.index_update(
-        flux_north,
-        jax.ops.index[:, :-1, :],
+    flux_north = flux_north.at[:, :-1, :].set(
         K_h_tke
         * (tke[:, 1:, :, tau] - tke[:, :-1, :, tau])
         / dyu[np.newaxis, :-1, np.newaxis]
         * maskV[:, :-1, :]
         * cosu[np.newaxis, :-1, np.newaxis],
     )
-    tke = jax.ops.index_add(
-        tke,
-        jax.ops.index[2:-2, 2:-2, :, taup1],
+    tke = tke.at[2:-2, 2:-2, :, taup1].add(
         dt_tke
         * maskW[2:-2, 2:-2, :]
         * (
@@ -346,9 +312,7 @@ def integrate_tke(
         dt_tracer,
     )
 
-    dtke = jax.ops.index_update(
-        dtke,
-        jax.ops.index[2:-2, 2:-2, :, tau],
+    dtke = dtke.at[2:-2, 2:-2, :, tau].set(
         maskW[2:-2, 2:-2, :]
         * (
             -(flux_east[2:-2, 2:-2, :] - flux_east[1:-3, 2:-2, :])
@@ -357,26 +321,19 @@ def integrate_tke(
             / (cost[np.newaxis, 2:-2, np.newaxis] * dyt[np.newaxis, 2:-2, np.newaxis])
         ),
     )
-    dtke = jax.ops.index_add(
-        dtke, jax.ops.index[:, :, 0, tau], -flux_top[:, :, 0] / dzw[0]
+    dtke = dtke.at[:, :, 0, tau].add( -flux_top[:, :, 0] / dzw[0]
     )
-    dtke = jax.ops.index_add(
-        dtke,
-        jax.ops.index[:, :, 1:-1, tau],
+    dtke = dtke.at[:, :, 1:-1, tau].add(
         -(flux_top[:, :, 1:-1] - flux_top[:, :, :-2]) / dzw[1:-1],
     )
-    dtke = jax.ops.index_add(
-        dtke,
-        jax.ops.index[:, :, -1, tau],
+    dtke = dtke.at[:, :, -1, tau].add(
         -(flux_top[:, :, -1] - flux_top[:, :, -2]) / (0.5 * dzw[-1]),
     )
 
     """
     Adam Bashforth time stepping
     """
-    tke = jax.ops.index_add(
-        tke,
-        jax.ops.index[:, :, :, taup1],
+    tke = tke.at[:, :, :, taup1].add(
         dt_tracer
         * ((1.5 + AB_eps) * dtke[:, :, :, tau] - (0.5 + AB_eps) * dtke[:, :, :, taum1]),
     )

@@ -77,16 +77,12 @@ def isoneutral_diffusion_pre(
     """
     gradients at top face of T cells
     """
-    dTdz = jax.ops.index_update(
-        dTdz,
-        jax.ops.index[:, :, :-1],
+    dTdz = dTdz.at[:, :, :-1].set(
         maskW[:, :, :-1]
         * (temp[:, :, 1:, tau] - temp[:, :, :-1, tau])
         / dzw[jnp.newaxis, jnp.newaxis, :-1],
     )
-    dSdz = jax.ops.index_update(
-        dSdz,
-        jax.ops.index[:, :, :-1],
+    dSdz = dSdz.at[:, :, :-1].set(
         maskW[:, :, :-1]
         * (salt[:, :, 1:, tau] - salt[:, :, :-1, tau])
         / dzw[jnp.newaxis, jnp.newaxis, :-1],
@@ -95,16 +91,12 @@ def isoneutral_diffusion_pre(
     """
     gradients at eastern face of T cells
     """
-    dTdx = jax.ops.index_update(
-        dTdx,
-        jax.ops.index[:-1, :, :],
+    dTdx = dTdx.at[:-1, :, :].set(
         maskU[:-1, :, :]
         * (temp[1:, :, :, tau] - temp[:-1, :, :, tau])
         / (dxu[:-1, jnp.newaxis, jnp.newaxis] * cost[jnp.newaxis, :, jnp.newaxis]),
     )
-    dSdx = jax.ops.index_update(
-        dSdx,
-        jax.ops.index[:-1, :, :],
+    dSdx = dSdx.at[:-1, :, :].set(
         maskU[:-1, :, :]
         * (salt[1:, :, :, tau] - salt[:-1, :, :, tau])
         / (dxu[:-1, jnp.newaxis, jnp.newaxis] * cost[jnp.newaxis, :, jnp.newaxis]),
@@ -113,16 +105,12 @@ def isoneutral_diffusion_pre(
     """
     gradients at northern face of T cells
     """
-    dTdy = jax.ops.index_update(
-        dTdy,
-        jax.ops.index[:, :-1, :],
+    dTdy = dTdy.at[:, :-1, :].set(
         maskV[:, :-1, :]
         * (temp[:, 1:, :, tau] - temp[:, :-1, :, tau])
         / dyu[jnp.newaxis, :-1, jnp.newaxis],
     )
-    dSdy = jax.ops.index_update(
-        dSdy,
-        jax.ops.index[:, :-1, :],
+    dSdy = dSdy.at[:, :-1, :].set(
         maskV[:, :-1, :]
         * (salt[:, 1:, :, tau] - salt[:, :-1, :, tau])
         / dyu[jnp.newaxis, :-1, jnp.newaxis],
@@ -138,9 +126,7 @@ def isoneutral_diffusion_pre(
     Compute Ai_ez and K11 on center of east face of T cell.
     """
     diffloc = jnp.zeros_like(K_11)
-    diffloc = jax.ops.index_update(
-        diffloc,
-        jax.ops.index[1:-2, 2:-2, 1:],
+    diffloc = diffloc.at[1:-2, 2:-2, 1:].set(
         0.25
         * (
             K_iso[1:-2, 2:-2, 1:]
@@ -149,9 +135,7 @@ def isoneutral_diffusion_pre(
             + K_iso[2:-1, 2:-2, :-1]
         ),
     )
-    diffloc = jax.ops.index_update(
-        diffloc,
-        jax.ops.index[1:-2, 2:-2, 0],
+    diffloc = diffloc.at[1:-2, 2:-2, 0].set(
         0.5 * (K_iso[1:-2, 2:-2, 0] + K_iso[2:-1, 2:-2, 0]),
     )
 
@@ -171,33 +155,25 @@ def isoneutral_diffusion_pre(
             )
             sxe = -drodxe / (jnp.minimum(0.0, drodze) - epsln)
             taper = dm_taper(sxe)
-            sumz = jax.ops.index_update(
-                sumz,
-                jax.ops.index[:, :, ki:],
+            sumz = sumz.at[:, :, ki:].set(
                 sumz[..., ki:]
                 + dzw[jnp.newaxis, jnp.newaxis, : -1 + kr or None]
                 * maskU[1:-2, 2:-2, ki:]
                 * jnp.maximum(K_iso_steep, diffloc[1:-2, 2:-2, ki:] * taper),
             )
-            Ai_ez = jax.ops.index_update(
-                Ai_ez,
-                jax.ops.index[1:-2, 2:-2, ki:, ip, kr],
+            Ai_ez = Ai_ez.at[1:-2, 2:-2, ki:, ip, kr].set(
                 taper * sxe * maskU[1:-2, 2:-2, ki:],
             )
 
-    K_11 = jax.ops.index_update(
-        K_11,
-        jax.ops.index[1:-2, 2:-2, :],
+    K_11 = K_11.at[1:-2, 2:-2, :].set(
         sumz / (4.0 * dzt[jnp.newaxis, jnp.newaxis, :]),
     )
 
     """
     Compute Ai_nz and K_22 on center of north face of T cell.
     """
-    diffloc = jax.ops.index_update(diffloc, jax.ops.index[...], 0)
-    diffloc = jax.ops.index_update(
-        diffloc,
-        jax.ops.index[2:-2, 1:-2, 1:],
+    diffloc = diffloc.at[...].set( 0)
+    diffloc = diffloc.at[2:-2, 1:-2, 1:].set(
         0.25
         * (
             K_iso[2:-2, 1:-2, 1:]
@@ -206,9 +182,7 @@ def isoneutral_diffusion_pre(
             + K_iso[2:-2, 2:-1, :-1]
         ),
     )
-    diffloc = jax.ops.index_update(
-        diffloc,
-        jax.ops.index[2:-2, 1:-2, 0],
+    diffloc = diffloc.at[2:-2, 1:-2, 0].set(
         0.5 * (K_iso[2:-2, 1:-2, 0] + K_iso[2:-2, 2:-1, 0]),
     )
 
@@ -228,22 +202,16 @@ def isoneutral_diffusion_pre(
             )
             syn = -drodyn / (jnp.minimum(0.0, drodzn) - epsln)
             taper = dm_taper(syn)
-            sumz = jax.ops.index_update(
-                sumz,
-                jax.ops.index[:, :, ki:],
+            sumz = sumz.at[:, :, ki:].set(
                 sumz[..., ki:]
                 + dzw[jnp.newaxis, jnp.newaxis, : -1 + kr or None]
                 * maskV[2:-2, 1:-2, ki:]
                 * jnp.maximum(K_iso_steep, diffloc[2:-2, 1:-2, ki:] * taper),
             )
-            Ai_nz = jax.ops.index_update(
-                Ai_nz,
-                jax.ops.index[2:-2, 1:-2, ki:, jp, kr],
+            Ai_nz = Ai_nz.at[2:-2, 1:-2, ki:, jp, kr].set(
                 taper * syn * maskV[2:-2, 1:-2, ki:],
             )
-    K_22 = jax.ops.index_update(
-        K_22,
-        jax.ops.index[2:-2, 1:-2, :],
+    K_22 = K_22.at[2:-2, 1:-2, :].set(
         sumz / (4.0 * dzt[jnp.newaxis, jnp.newaxis, :]),
     )
 
@@ -276,9 +244,7 @@ def isoneutral_diffusion_pre(
                 * sxb ** 2
                 * maskW[2:-2, 2:-2, :-1]
             )
-            Ai_bx = jax.ops.index_update(
-                Ai_bx,
-                jax.ops.index[2:-2, 2:-2, :-1, ip, kr],
+            Ai_bx = Ai_bx.at[2:-2, 2:-2, :-1, ip, kr].set(
                 taper * sxb * maskW[2:-2, 2:-2, :-1],
             )
 
@@ -300,15 +266,11 @@ def isoneutral_diffusion_pre(
                 * syb ** 2
                 * maskW[2:-2, 2:-2, :-1]
             )
-            Ai_by = jax.ops.index_update(
-                Ai_by,
-                jax.ops.index[2:-2, 2:-2, :-1, jp, kr],
+            Ai_by = Ai_by.at[2:-2, 2:-2, :-1, jp, kr].set(
                 taper * syb * maskW[2:-2, 2:-2, :-1],
             )
 
-    K_33 = jax.ops.index_update(
-        K_33,
-        jax.ops.index[2:-2, 2:-2, :-1],
+    K_33 = K_33.at[2:-2, 2:-2, :-1].set(
         sumx / (4 * dxt[2:-2, jnp.newaxis, jnp.newaxis])
         + sumy
         / (
@@ -317,7 +279,7 @@ def isoneutral_diffusion_pre(
             * cost[jnp.newaxis, 2:-2, jnp.newaxis]
         ),
     )
-    K_33 = jax.ops.index_update(K_33, jax.ops.index[2:-2, 2:-2, -1], 0.0)
+    K_33 = K_33.at[2:-2, 2:-2, -1].set( 0.0)
 
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
