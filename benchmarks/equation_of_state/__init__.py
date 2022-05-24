@@ -43,4 +43,6 @@ __implementations__ = (
     "numpy",
     "pytorch",
     "tensorflow",
+    "transonic_pythran",
+    "transonic_cython",
 )
