@@ -173,6 +173,12 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
                     run = bm_module.get_callable(b, size, device=device)
                     with Timer() as t:
                         res = run()
+                        res2 = run()
+                r1 = convert_to_numpy(res, b, device)
+                r2 = convert_to_numpy(res, b, device)
+                if not check_consistency(r1, r2):
+                    click.echo(f"Error: inconsistent results for size {size}")
+                    exit(1)
 
                 # YOWO (you only warn once)
                 if not checked[(b, size)]:
