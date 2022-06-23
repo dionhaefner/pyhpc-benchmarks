@@ -175,7 +175,7 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
                         res = run()
                         res2 = run()
                 r1 = convert_to_numpy(res, b, device)
-                r2 = convert_to_numpy(res, b, device)
+                r2 = convert_to_numpy(res2, b, device)
                 if not check_consistency(r1, r2):
                     click.echo(f"Error: inconsistent results for size {size}")
                     exit(1)
