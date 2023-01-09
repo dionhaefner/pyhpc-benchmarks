@@ -311,4 +311,5 @@ def prepare_inputs(*inputs, device="cpu"):
 def run(*inputs, device="cpu"):
     isoneutral_diffusion_pre(*inputs)
     out = inputs[16:23]
+    ti.sync()
     return out

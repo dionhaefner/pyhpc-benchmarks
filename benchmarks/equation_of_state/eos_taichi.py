@@ -280,4 +280,5 @@ def prepare_inputs(sa, ct, p, device="cpu"):
 
 def run(sa, ct, p, out, device="cpu"):
     gsw_dHdT(sa, ct, p, out)
+    ti.sync()
     return out
