@@ -128,7 +128,7 @@ def adv_flux_superbee_wgrid(
                 )
 
 
-@nb.jit(nopython=True, fastmath=True, cache=True)
+@nb.jit(nopython=True, boundscheck=False, nogil=True, fastmath=True, cache=True)
 def integrate_tke(
     u,
     v,

@@ -252,7 +252,7 @@ def gsw_dHdT(sa, ct, p):
     return t305
 
 
-@nb.jit(nopython=True, fastmath=True)
+@nb.jit(nopython=True, boundscheck=False, nogil=True, fastmath=True)
 def gsw_dHdT_vec(sa, ct, p, out):
     ix, iy, iz = sa.shape
     for i in range(ix):

@@ -26,7 +26,7 @@ def generate_inputs(size):
     cost, cosu = (np.random.randn(shape[1]) for _ in range(2))
 
     # 3d arrays
-    K_iso, K_iso_steep, K_11, K_22, K_33 = (np.random.randn(*shape) for _ in range(5))
+    K_iso, K_11, K_22, K_33 = (np.random.randn(*shape) for _ in range(4))
 
     # 4d arrays
     salt, temp = (np.random.randn(*shape, 3) for _ in range(2))
@@ -83,4 +83,5 @@ __implementations__ = (
     "numpy",
     "jax",
     "pytorch",
+    "taichi",
 )
