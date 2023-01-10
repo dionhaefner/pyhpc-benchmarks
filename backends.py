@@ -31,6 +31,9 @@ def convert_to_numpy(arr, backend, device="cpu"):
     if backend == "aesara":
         return numpy.asarray(arr)
 
+    if backend == "taichi":
+        return arr.to_numpy()
+
     raise RuntimeError(
         f"Got unexpected array / backend combination: {type(arr)} / {backend}"
     )
@@ -195,6 +198,23 @@ def setup_tensorflow(device="cpu"):
     yield tf
 
 
+TAICHI_SETUP_DONE = False
+
+@setup_function
+def setup_taichi(device="cpu"):
+    global TAICHI_SETUP_DONE
+    import taichi
+
+    if not TAICHI_SETUP_DONE:
+        taichi.init(
+            arch=taichi.cpu if device == "cpu" else taichi.gpu, 
+            cpu_max_num_threads=1,
+            default_fp=taichi.f64,
+        )
+        TAICHI_SETUP_DONE = True
+
+    yield taichi
+
 __backends__ = {
     "numpy": setup_numpy,
     "cupy": setup_cupy,
@@ -203,4 +223,5 @@ __backends__ = {
     "numba": setup_numba,
     "pytorch": setup_pytorch,
     "tensorflow": setup_tensorflow,
+    "taichi": setup_taichi,
 }

@@ -51,6 +51,7 @@ Two reasons:
 - [Tensorflow](https://www.tensorflow.org)
 - [Pytorch](https://pytorch.org)
 - [CuPy](https://cupy.chainer.org/) (GPU only)
+- [Taichi](https://www.taichi-lang.org/)
 
 (not every backend is available for every benchmark)
 
@@ -112,7 +113,7 @@ Options:
   -s, --size INTEGER              Run benchmark for this array size
                                   (repeatable)  [default: 4096, 16384, 65536,
                                   262144, 1048576, 4194304]
-  -b, --backend [numpy|cupy|jax|aesara|numba|pytorch|tensorflow]
+  -b, --backend [numpy|cupy|jax|aesara|numba|pytorch|taichi|tensorflow]
                                   Run benchmark with this backend (repeatable)
                                   [default: run all backends]
   -r, --repetitions INTEGER       Fixed number of iterations to run for each
@@ -159,28 +160,29 @@ $ for backend in jax cupy pytorch tensorflow; do
 #### Equation of state
 
 <p align="middle">
-  <img src="results/magni-plots/bench-equation_of_state-CPU.png?raw=true" width="400">
-  <img src="results/magni-plots/bench-equation_of_state-GPU.png?raw=true" width="400">
+  <img src="results/aws-plots/bench-equation_of_state-CPU.png?raw=true" width="400">
+  <img src="results/aws-plots/bench-equation_of_state-GPU.png?raw=true" width="400">
 </p>
   
 #### Isoneutral mixing
 
 <p align="middle">
-  <img src="results/magni-plots/bench-isoneutral_mixing-CPU.png?raw=true" width="400">
-  <img src="results/magni-plots/bench-isoneutral_mixing-GPU.png?raw=true" width="400">
+  <img src="results/aws-plots/bench-isoneutral_mixing-CPU.png?raw=true" width="400">
+  <img src="results/aws-plots/bench-isoneutral_mixing-GPU.png?raw=true" width="400">
 </p>
 
 #### Turbulent kinetic energy
 
 <p align="middle">
-  <img src="results/magni-plots/bench-turbulent_kinetic_energy-CPU.png?raw=true" width="400">
-  <img src="results/magni-plots/bench-turbulent_kinetic_energy-GPU.png?raw=true" width="400">
+  <img src="results/aws-plots/bench-turbulent_kinetic_energy-CPU.png?raw=true" width="400">
+  <img src="results/aws-plots/bench-turbulent_kinetic_energy-GPU.png?raw=true" width="400">
 </p>
 
 ### Full reports
 
-- [Example results on bare metal with Tesla P100 GPU](/results/magni.md) (more reliable)
+- [Example results on EC2 with Tesla V100 GPU](/results/aws.md) (more reliable)
 - [Example results on Google Colab](/results/colab.md) (easier to reproduce)
+- [Example results on bare metal](/results/magni.md) (most reliable, but outdated)
 
 ## Conclusion
 

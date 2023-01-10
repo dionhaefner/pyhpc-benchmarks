@@ -9,7 +9,7 @@ dependencies:
     - click
     - aesara
     - numba
+    - taichi
     - torch>=1.10
     - tensorflow>=2.0
-    - -f https://storage.googleapis.com/jax-releases/jax_releases.html
     - jax[cpu]

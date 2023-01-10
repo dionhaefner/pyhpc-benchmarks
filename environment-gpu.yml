@@ -11,8 +11,9 @@ dependencies:
     - click
     - aesara
     - cupy
+    - taichi
     - numba
     - torch>=1.10
     - tensorflow-gpu>=2.0
-    - -f https://storage.googleapis.com/jax-releases/jax_releases.html
+    - -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
     - jax[cuda]
