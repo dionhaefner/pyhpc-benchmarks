@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Häfner"
+  given-names: "Dion"
+  orcid: "https://orcid.org/0000-0002-4465-7317"
+title: "pyhpc-benchmarks"
+version: 3.0
+date-released: 2021-10-28
+url: "https://github.com/dionhaefner/pyhpc-benchmarks"
