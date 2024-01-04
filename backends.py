@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy
 
@@ -33,6 +34,9 @@ def convert_to_numpy(arr, backend, device="cpu"):
 
     if backend == "taichi":
         return arr.to_numpy()
+    
+    if backend == "mlx":
+        return numpy.asarray(arr)
 
     raise RuntimeError(
         f"Got unexpected array / backend combination: {type(arr)} / {backend}"
@@ -215,6 +219,15 @@ def setup_taichi(device="cpu"):
 
     yield taichi
 
+
+@setup_function
+def setup_mlx(device="cpu"):
+    import mlx.core
+    mlx.core.set_default_device(getattr(mlx.core, device))
+    warnings.warn("mlx does not support float64 precision and will produce different results")
+    yield mlx.core
+
+
 __backends__ = {
     "numpy": setup_numpy,
     "cupy": setup_cupy,
@@ -224,4 +237,5 @@ __backends__ = {
     "pytorch": setup_pytorch,
     "tensorflow": setup_tensorflow,
     "taichi": setup_taichi,
+    "mlx": setup_mlx,
 }

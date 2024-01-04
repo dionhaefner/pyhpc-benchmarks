@@ -80,4 +80,5 @@ __implementations__ = (
     "numba",
     "numpy",
     "pytorch",
+    "mlx",
 )

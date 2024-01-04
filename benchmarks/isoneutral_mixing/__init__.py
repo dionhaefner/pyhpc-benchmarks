@@ -84,4 +84,5 @@ __implementations__ = (
     "jax",
     "pytorch",
     "taichi",
+    "mlx",
 )

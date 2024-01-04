@@ -159,12 +159,13 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
     )
     random.shuffle(all_runs)
 
-    results = {}
     checked = {r: False for r in runs}
 
     pbar = click.progressbar(
         label=f"Running {len(all_runs)} benchmarks...", length=len(runs)
     )
+
+    results = {s: bm_module.get_callable("numpy", s)() for s in size}
 
     try:
         with pbar:
@@ -176,17 +177,14 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
 
                 # YOWO (you only warn once)
                 if not checked[(b, size)]:
-                    if size in results:
-                        is_consistent = check_consistency(
-                            results[size], convert_to_numpy(res, b, device)
+                    is_consistent = check_consistency(
+                        results[size], convert_to_numpy(res, b, device)
+                    )
+                    if not is_consistent:
+                        click.echo(
+                            f"\nWarning: inconsistent results for backend {b}, size {size}",
+                            err=True,
                         )
-                        if not is_consistent:
-                            click.echo(
-                                f"\nWarning: inconsistent results for size {size}",
-                                err=True,
-                            )
-                    else:
-                        results[size] = convert_to_numpy(res, b, device)
                     checked[(b, size)] = True
 
                 timings[(b, size)].append(t.elapsed)

@@ -44,4 +44,5 @@ __implementations__ = (
     "pytorch",
     "tensorflow",
     "taichi",
+    "mlx",
 )
