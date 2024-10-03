@@ -143,12 +143,11 @@ def main(benchmark, size=None, backend=None, repetitions=None, burnin=1, device=
 
         for b, s in runs:
             # use end-to-end runtime for repetition estimation
-            def run_func():
+            with setup_functions[b](device=device):
                 run = bm_module.get_callable(b, s, device=device)
-                with setup_functions[b](device=device):
+                def run_func():
                     run()
-
-            repetitions[(b, s)] = estimate_repetitions(run_func)
+                repetitions[(b, s)] = estimate_repetitions(run_func)
     else:
         repetitions = {(b, s): repetitions for b, s in runs}
 
